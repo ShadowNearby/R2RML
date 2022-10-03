@@ -30,3 +30,89 @@
 *.exe
 *.out
 *.app
+*.pyc
+*.i*86
+*.x86_64
+*.hex
+bin/g*
+scripts/update_test
+scripts/dataset_test
+api/cpp/example/example
+
+Parser/Sparql*
+
+#result logs
+*.txt
+*.log
+logs
+
+#backup files
+backup.json
+
+#download files
+*.torrent
+*.iso
+
+#compressed files
+*.tar.bz2
+*.zip
+*.tar.gz
+*.7z
+*.rar
+
+#temp files
+*.dat
+
+#datasets
+*.nt
+*.n3
+
+#databases
+*.db
+
+#pictures
+*.jpg
+*.jpeg
+*.png
+*.pdf
+
+#music and movie
+*.mp3
+*.wav
+*.mp4
+*.rmvb
+
+# Object files
+*.ko
+*.elf
+*.class
+
+# IDE files
+cscope*
+.cproject
+.project
+tags
+.settings
+.vs
+*.iml
+.idea
+
+# latex files
+*.aux
+*.toc
+*.synctex.gz
+*.bak~
+
+# queries
+*.sql
+*.sh
+
+# modules
+node_modules
+
+# query results
+*.info
+
+#build
+build/
+
