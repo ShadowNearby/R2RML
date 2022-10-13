@@ -43,7 +43,7 @@ const std::string &Triple::getObject() const
     return object_;
 }
 
-ObjectType Triple::getObjectType() const
+Triple::ObjectType Triple::getObjectType() const
 {
     return objectType_;
 }

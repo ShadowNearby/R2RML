@@ -6,13 +6,14 @@
 
 #include "Utility.h"
 
-enum ObjectType
-{
-    None, Entity, Literal
-};
 
 class Triple
 {
+public:
+    enum ObjectType
+    {
+        None, Entity, Literal
+    };
 private:
     std::string subject_;
     std::string predicate_;
@@ -20,6 +21,8 @@ private:
     ObjectType objectType_;
 
 public:
+
+
     Triple();
 
     explicit Triple(const std::string &subject, const std::string &predicate, const std::string &object,

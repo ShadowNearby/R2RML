@@ -9,3 +9,6 @@
 #include <vector>
 #include <sstream>
 #include <istream>
+#include <fstream>
+#include <iostream>
+#include <memory>

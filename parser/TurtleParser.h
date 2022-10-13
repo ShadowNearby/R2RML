@@ -13,7 +13,7 @@
 #include <utility>
 
 #include "Type.h"
-#include "Utility.h"
+#include "../Utility.h"
 
 //---------------------------------------------------------------------------
 /// Parse a turtle file
@@ -21,7 +21,7 @@ class TurtleParser
 {
 public:
     /// A parse error
-    class Exception
+    class Exception : public std::exception
     {
     public:
         /// The message
@@ -34,7 +34,7 @@ public:
         explicit Exception(const char *message);
 
         /// Destructor
-        ~Exception();
+        ~Exception() override;
     };
 
 private:
@@ -122,7 +122,7 @@ private:
 
     public:
         /// Constructor
-        Lexer(std::istream &in);
+        explicit Lexer(std::istream &in);
 
         /// Destructor
         ~Lexer();
