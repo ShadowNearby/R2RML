@@ -8,25 +8,24 @@ Triple::Triple()
     subject_ = "";
     predicate_ = "";
     object_ = "";
+    objectType_ = None;
 }
 
-Triple::Triple(const std::string &line)
+Triple::Triple(const std::string &_subject, const std::string &_predicate, const std::string &_object,
+               const ObjectType _objectType)
 {
-
+    this->subject_ = _subject;
+    this->predicate_ = _predicate;
+    this->object_ = _object;
+    this->objectType_ = _objectType;
 }
 
-Triple::Triple(const std::string &subject, const std::string &predicate, const std::string &object)
+Triple::Triple(const Triple &_triple)
 {
-    this->subject_ = subject;
-    this->predicate_ = predicate;
-    this->object_ = object;
-}
-
-Triple::Triple(const Triple &triple)
-{
-    this->object_ = triple.object_;
-    this->predicate_ = triple.predicate_;
-    this->subject_ = triple.subject_;
+    this->object_ = _triple.object_;
+    this->predicate_ = _triple.predicate_;
+    this->subject_ = _triple.subject_;
+    this->objectType_ = _triple.objectType_;
 }
 
 const std::string &Triple::getSubject() const
@@ -44,17 +43,28 @@ const std::string &Triple::getObject() const
     return object_;
 }
 
-void Triple::setSubject(const std::string &subject)
+ObjectType Triple::getObjectType() const
 {
-    this->subject_ = subject;
+    return objectType_;
 }
 
-void Triple::setPredicate(const std::string &predicate)
+void Triple::setSubject(const std::string &_subject)
 {
-    this->predicate_ = predicate;
+    this->subject_ = _subject;
 }
 
-void Triple::setObject(const std::string &object)
+void Triple::setPredicate(const std::string &_predicate)
 {
-    this->object_ = object;
+    this->predicate_ = _predicate;
+}
+
+void Triple::setObject(const std::string &_object)
+{
+    this->object_ = _object;
+}
+
+
+void Triple::setObjectType(ObjectType objectType)
+{
+    this->objectType_ = objectType;
 }

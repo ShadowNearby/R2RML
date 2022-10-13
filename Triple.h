@@ -4,7 +4,12 @@
 
 #pragma once
 
-#include <string>
+#include "Utility.h"
+
+enum ObjectType
+{
+    None, Entity, Literal
+};
 
 class Triple
 {
@@ -12,13 +17,13 @@ private:
     std::string subject_;
     std::string predicate_;
     std::string object_;
+    ObjectType objectType_;
 
 public:
     Triple();
 
-    explicit Triple(const std::string &line);
-
-    explicit Triple(const std::string &subject, const std::string &predicate, const std::string &object);
+    explicit Triple(const std::string &subject, const std::string &predicate, const std::string &object,
+                    ObjectType objectType = None);
 
     Triple(const Triple &triple);
 
@@ -28,10 +33,15 @@ public:
 
     [[nodiscard]] const std::string &getObject() const;
 
+    [[nodiscard]] ObjectType getObjectType() const;
+
+
     void setSubject(const std::string &subject);
 
     void setPredicate(const std::string &predicate);
 
     void setObject(const std::string &object);
+
+    void setObjectType(ObjectType objectType);
 
 };
