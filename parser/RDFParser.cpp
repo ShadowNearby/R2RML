@@ -238,7 +238,7 @@ size_t RDFParser::parseFile(std::vector<Triple> &_triple_vector,
             tripleObjectType = Triple::Literal;
         }
 
-        _triple_vector.emplace_back(subject, predicate, object, tripleObjectType);
+        _triple_vector.emplace_back(Triple(subject, predicate, object, tripleObjectType));
     }
     if (!_error_log.empty()) {
         if (_error_log == "NULL")
@@ -260,3 +260,5 @@ size_t RDFParser::parseLines(std::vector<Triple> &_triple_vector,
     this->sin_ << _lines;
     return parseFile(_triple_vector);
 }
+
+
