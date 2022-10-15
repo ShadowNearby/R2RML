@@ -5,15 +5,14 @@
 #ifndef R2RML_DATABASE_H
 #define R2RML_DATABASE_H
 
-#include "./Utility.h"
+#include "util/Utility.h"
 #include "./Structures.h"
-#include "./Triple.h"
+#include "util/Triple.h"
 
-
-
+typedef std::pair<std::string,std::vector<Triple*>> STR_TRI_PAIR;
+typedef std::pair<std::string,std::string> STR_STR_PAIR;
 
 class Database {
-protected:
     std::vector<std::string> all_subs;
 
     //hash map for s,p,o
@@ -24,7 +23,7 @@ protected:
 public:
     Database();
     // load data
-    bool handleTriple(const Triple* triple);
+    bool handleTriple(Triple* triple);
 
 
 private:
