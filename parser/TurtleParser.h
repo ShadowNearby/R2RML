@@ -13,7 +13,7 @@
 #include <utility>
 
 #include "Type.h"
-#include "../Utility.h"
+#include "../util/Utility.h"
 
 //---------------------------------------------------------------------------
 /// Parse a turtle file

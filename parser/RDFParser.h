@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "../Utility.h"
-#include "../Triple.h"
+#include "../util/Utility.h"
+#include "../util/Triple.h"
 #include "TurtleParser.h"
 
 class RDFParser
@@ -23,5 +23,4 @@ public:
     size_t parseFile(std::vector<Triple> &_triple_vector, const std::string &_error_log = "", size_t _startLine = 0);
 
     size_t parseLines(std::vector<Triple> &_triple_vector, const std::string &_lines);
-
 };
