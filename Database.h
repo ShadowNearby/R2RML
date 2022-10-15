@@ -5,26 +5,26 @@
 #ifndef R2RML_DATABASE_H
 #define R2RML_DATABASE_H
 
-#include "./Utility.h"
+#include "util/Utility.h"
 #include "./Structures.h"
-#include "./Triple.h"
+#include "util/Triple.h"
 
 
-
-
-class Database {
+class Database
+{
 protected:
     std::vector<std::string> all_subs;
 
     //hash map for s,p,o
-    std::unordered_map<std::string,SUB_TYPE*> sub_map;
-    std::unordered_map<std::string,PRE_TYPE*> pre_map;
-    std::unordered_map<std::string,OBJ_TYPE*> obj_map;
+    std::unordered_map<std::string, SUB_TYPE *> sub_map;
+    std::unordered_map<std::string, PRE_TYPE *> pre_map;
+    std::unordered_map<std::string, OBJ_TYPE *> obj_map;
 
 public:
     Database();
+
     // load data
-    bool handleTriple(const Triple* triple);
+    bool handleTriple(const Triple *triple);
 
 
 private:
