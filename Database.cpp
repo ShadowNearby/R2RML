@@ -75,5 +75,5 @@ bool Database::handleTriple(Triple *triple)
         if (iter_all_subs == all_subs.end())
             all_subs.push_back(sub);
     }
-    return false;
+    return true;
 }
