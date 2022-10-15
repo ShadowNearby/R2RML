@@ -9,9 +9,9 @@
 
 typedef std::pair<std::string, std::vector<Triple *>> STR_TRI_PAIR;
 typedef std::pair<std::string, std::string> STR_STR_PAIR;
+typedef std::pair<std::string, SUB_TYPE *> STR_SUB_PAIR;
 
-class Database
-{
+class Database {
     std::vector<std::string> all_subs;
 
     //hash map for s,p,o
