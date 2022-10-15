@@ -2,8 +2,6 @@
 // Created by 刘洋 on 2022/10/14.
 //
 #pragma once
-#ifndef R2RML_DATABASE_H
-#define R2RML_DATABASE_H
 
 #include "util/Utility.h"
 #include "./Structures.h"
@@ -30,5 +28,3 @@ public:
 private:
 
 };
-
-#endif //R2RML_DATABASE_H
