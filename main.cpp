@@ -6,8 +6,7 @@
 #include "Database.h"
 #include "parser/RDFParser.h"
 
-int main()
-{
+int main() {
     auto _100 = R"(..\tiny_example)";
     auto _10k = R"(..\example)";
 //    auto _10m = R"(D:\Download\Claros)";
@@ -18,9 +17,18 @@ int main()
     std::vector<Triple> vec;
     rdfParser.parseFile(vec);
     Database database;
-    auto triple = &vec[1];
-    auto flag = database.handleTriple(triple);
-    std::cout << flag << std::endl;
+    clock_t start, end;
+    start = clock();
+    for (int i = 0; i < vec.size(); ++i) {
+        auto triple = &vec[i];
+        auto flag = database.handleTriple(triple);
+        if (!flag) std::cout << "error";
+    }
+    end = clock();
+    std::cout << (double) (end - start) / CLOCKS_PER_SEC << std::endl;
+    std::string sub, pre, obj;
+    std::cin >> sub >> pre >> obj;
+    database.findTriple(sub, pre, obj);
     return 0;
 
 }
