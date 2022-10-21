@@ -11,7 +11,7 @@
 #define yjs true
 auto _100 = R"(..\tiny_example)";
 auto _100k = R"(..\example)";
-//    auto _10m = R"(D:\Download\Claros)";
+auto _10m = R"(D:\Download\Claros)";
 std::string subject = "<http://dag.org#node840>";
 std::string predicate = "<http://dag.org#edge>";
 std::string object = "<http://dag.org#node1726>";
@@ -23,7 +23,7 @@ int main()
     std::fstream f;
     clock_t start, end;
     start = clock();
-    f.open(_100, std::ios::in);
+    f.open(_10m, std::ios::in);
     RDFParser rdfParser(f);
     std::vector<Triple> vec;
     rdfParser.parseFile(vec);
@@ -40,10 +40,10 @@ int main()
     for (const auto &item: vec)
         kVstore.insert(item);
     std::vector<Triple> result;
-    auto nums = kVstore.getTripleBySub(result, subject);
-    for (auto item: result)
-        printf("%s\n", item.to_string().c_str());
-    printf("%llu\n", nums);
+//    auto nums = kVstore.getTripleBySubObj(result, subject, object);
+//    for (auto item: result)
+//        printf("%s\n", item.to_string().c_str());
+//    printf("%llu\n", nums);
 #endif
     end = clock();
     std::cout << (double) (end - start) / CLOCKS_PER_SEC << std::endl;

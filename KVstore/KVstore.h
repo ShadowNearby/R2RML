@@ -15,9 +15,9 @@ class KVstore
 public:
     KVstore();
 
-    bool insert(const std::string &subject, const std::string &predicate, const std::string &object);
+    void insert(const std::string &subject, const std::string &predicate, const std::string &object);
 
-    bool insert(const Triple &triple);
+    void insert(const Triple &triple);
 
     size_t getTripleBySubPreObj(std::vector<Triple> &result, const std::string &subject, const std::string &predicate,
                                 const std::string &object);
@@ -46,12 +46,6 @@ public:
     std::unordered_map<std::string, size_t> subject2id;
     std::unordered_map<std::string, size_t> predicate2id;
     std::unordered_map<std::string, size_t> object2id;
-//    std::unordered_map<size_t, std::vector<size_t>> subid2preidList;
-//    std::unordered_map<size_t, std::vector<size_t>> subid2objidList;
-//    std::unordered_map<size_t, std::vector<size_t>> preid2subidList;
-//    std::unordered_map<size_t, std::vector<size_t>> preid2objidList;
-//    std::unordered_map<size_t, std::vector<size_t>> objid2subidList;
-//    std::unordered_map<size_t, std::vector<size_t>> objid2preidList;
     std::unordered_map<std::pair<size_t, size_t>, std::vector<size_t>, pair_hash> subidpreid2objidList;
     std::unordered_map<std::pair<size_t, size_t>, std::vector<size_t>, pair_hash> subidobjid2preidList;
     std::unordered_map<std::pair<size_t, size_t>, std::vector<size_t>, pair_hash> preidobjid2subidList;

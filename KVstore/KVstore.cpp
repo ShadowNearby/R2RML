@@ -10,7 +10,8 @@ KVstore::KVstore()
     this->predicateIndex = 1;
 }
 
-bool KVstore::insert(const std::string &subject, const std::string &predicate, const std::string &object)
+void
+KVstore::insert(const std::string &subject, const std::string &predicate, const std::string &object)
 {
     bool subExist = subject2id.insert({subject, subjectIndex}).second;
     bool preExist = predicate2id.insert({predicate, predicateIndex}).second;
@@ -34,7 +35,7 @@ bool KVstore::insert(const std::string &subject, const std::string &predicate, c
         ++subjectIndex;
         ++predicateIndex;
         ++objectIndex;
-        return true;
+        return;
     }
     if (!subExist && preExist && objExist) {
         auto subID = subject2id[subject];
@@ -51,7 +52,7 @@ bool KVstore::insert(const std::string &subject, const std::string &predicate, c
                 {objectIndex, std::vector<std::pair<size_t, size_t>>(1, std::make_pair(subjectIndex, predicateIndex))});
         ++predicateIndex;
         ++objectIndex;
-        return true;
+        return;
     }
     if (subExist && !preExist && objExist) {
         auto preID = predicate2id[predicate];
@@ -70,7 +71,7 @@ bool KVstore::insert(const std::string &subject, const std::string &predicate, c
                 {objectIndex, std::vector<std::pair<size_t, size_t>>(1, std::make_pair(subjectIndex, predicateIndex))});
         ++subjectIndex;
         ++objectIndex;
-        return true;
+        return;
     }
     if (subExist && preExist && !objExist) {
         auto objID = object2id[object];
@@ -89,13 +90,13 @@ bool KVstore::insert(const std::string &subject, const std::string &predicate, c
                 {predicateIndex, std::vector<std::pair<size_t, size_t>>(1, std::make_pair(subjectIndex, objectIndex))});
         ++subjectIndex;
         ++predicateIndex;
-        return true;
+        return;
     }
     if (!subExist && !preExist && objExist) {
         auto preID = predicate2id[predicate];
         auto subID = subject2id[subject];
         id2object.insert({objectIndex, object});
-        auto objidList = subidpreid2objidList[std::make_pair(subID, preID)];
+        auto &objidList = subidpreid2objidList[std::make_pair(subID, preID)];
         if (objidList.empty())
             subidpreid2objidList.insert({std::make_pair(subID, preID), std::vector<size_t>(1, objectIndex)});
         else
@@ -109,13 +110,13 @@ bool KVstore::insert(const std::string &subject, const std::string &predicate, c
         objid2subidpreidList.insert(
                 {objectIndex, std::vector<std::pair<size_t, size_t>>(1, std::make_pair(subID, preID))});
         ++objectIndex;
-        return true;
+        return;
     }
     if (!subExist && preExist && !objExist) {
         auto objID = object2id[object];
         auto subID = subject2id[subject];
         id2predicate.insert({predicateIndex, predicate});
-        auto preidList = subidpreid2objidList[std::make_pair(subID, objID)];
+        auto &preidList = subidpreid2objidList[std::make_pair(subID, objID)];
         if (preidList.empty())
             subidobjid2preidList.insert({std::make_pair(subID, objID), std::vector<size_t>(1, predicateIndex)});
         else
@@ -127,13 +128,13 @@ bool KVstore::insert(const std::string &subject, const std::string &predicate, c
         preid2subidobjidList.insert(
                 {predicateIndex, std::vector<std::pair<size_t, size_t>>(1, std::make_pair(subID, objID))});
         ++predicateIndex;
-        return true;
+        return;
     }
     if (subExist && !preExist && !objExist) {
         auto objID = object2id[object];
         auto preID = predicate2id[predicate];
         id2subject.insert({subjectIndex, subject});
-        auto subidList = preidobjid2subidList[std::make_pair(preID, objID)];
+        auto &subidList = preidobjid2subidList[std::make_pair(preID, objID)];
         if (subidList.empty())
             preidobjid2subidList.insert({std::make_pair(preID, objID), std::vector<size_t>(1, subjectIndex)});
         else
@@ -145,26 +146,35 @@ bool KVstore::insert(const std::string &subject, const std::string &predicate, c
         subid2preidobjidList.insert(
                 {subjectIndex, std::vector<std::pair<size_t, size_t>>(1, std::make_pair(preID, objID))});
         ++subjectIndex;
-        return true;
+        return;
     }
     auto subID = subject2id[subject];
     auto preID = predicate2id[predicate];
     auto objID = object2id[object];
-    auto subIDList = preidobjid2subidList[std::make_pair(preID, objID)];
-    auto preIDList = subidobjid2preidList[std::make_pair(subID, objID)];
-    auto objIDList = subidpreid2objidList[std::make_pair(subID, preID)];
-    auto preIDobjIDList = subid2preidobjidList[subID];
-    auto subIDobjIDList = preid2subidobjidList[preID];
-    auto subIDpreIDList = objid2subidpreidList;
-    if (subIDList.empty() && preIDList.empty() && objIDList.empty()) {
-        subidobjid2preidList.insert({std::make_pair(subID, objID), std::vector<size_t>(1, preID)});
-        subidpreid2objidList.insert({std::make_pair(subID, preID), std::vector<size_t>(1, objID)});
+    auto &subIDList = preidobjid2subidList[std::make_pair(preID, objID)];
+    auto &preIDList = subidobjid2preidList[std::make_pair(subID, objID)];
+    auto &objIDList = subidpreid2objidList[std::make_pair(subID, preID)];
+    auto &preIDobjIDList = subid2preidobjidList[subID];
+    preIDobjIDList.emplace_back(std::make_pair(preID, objID));
+    auto &subIDobjIDList = preid2subidobjidList[preID];
+    subIDobjIDList.emplace_back(std::make_pair(subID, objID));
+    auto &subIDpreIDList = objid2subidpreidList[objID];
+    subIDpreIDList.emplace_back(std::make_pair(subID, preID));
+    if (subIDList.empty())
         preidobjid2subidList.insert({std::make_pair(preID, objID), std::vector<size_t>(1, subID)});
-    }
-
+    else
+        subIDList.emplace_back(subID);
+    if (preIDList.empty())
+        subidobjid2preidList.insert({std::make_pair(subID, objID), std::vector<size_t>(1, preID)});
+    else
+        preIDList.emplace_back(preID);
+    if (objIDList.empty())
+        subidpreid2objidList.insert({std::make_pair(subID, preID), std::vector<size_t>(1, objID)});
+    else
+        objIDList.emplace_back(objID);
 }
 
-bool
+void
 KVstore::insert(const Triple &triple)
 {
     return insert(triple.getSubject(), triple.getPredicate(), triple.getObject());
