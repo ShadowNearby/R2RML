@@ -68,3 +68,8 @@ void Triple::setObjectType(ObjectType objectType)
 {
     this->objectType_ = objectType;
 }
+
+std::string Triple::to_string()
+{
+    return subject_ + " " + predicate_ + " " + object_ + " .";
+}

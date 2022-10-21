@@ -15,4 +15,9 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <memory>
+#include <deque>
+#include <queue>
 #include <utility>
+#include "PairHash.h"
+#include "Triple.h"

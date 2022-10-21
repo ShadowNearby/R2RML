@@ -5,7 +5,6 @@
 #pragma once
 
 #include "../util/Utility.h"
-#include "../util/Triple.h"
 #include "TurtleParser.h"
 
 class RDFParser

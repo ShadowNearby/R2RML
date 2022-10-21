@@ -47,4 +47,6 @@ public:
 
     void setObjectType(ObjectType objectType);
 
+    std::string to_string();
+
 };

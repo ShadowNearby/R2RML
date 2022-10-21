@@ -5,7 +5,6 @@
 
 #include "util/Utility.h"
 #include "./Structures.h"
-#include "util/Triple.h"
 
 typedef std::pair<std::string, std::vector<Triple *>> STR_TRI_PAIR;
 typedef std::pair<std::string, std::string> STR_STR_PAIR;
@@ -14,7 +13,8 @@ typedef std::unordered_map<std::string, size_t> STR_ID_MAP;
 typedef std::pair<std::string, size_t> STR_ID_PAIR;
 typedef std::unordered_map<std::pair<size_t, size_t>, Triple *, pair_hash> PAIR_TRIPLE_MAP;
 
-class Database {
+class Database
+{
     std::vector<std::string> all_subs;
 
     //hash map for s,p,o
