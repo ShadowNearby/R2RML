@@ -36,10 +36,11 @@ KVstore::insert(const std::string &subject, const std::string &predicate, const 
         objid2subidpreidList.insert(
                 {objectIndex, std::list<std::pair<size_t,
                         size_t >>(1, std::make_pair(subjectIndex, predicateIndex))});
+        count++;
+        triple2id[std::make_tuple(subjectIndex, predicateIndex, objectIndex)] = count;
         ++subjectIndex;
         ++predicateIndex;
         ++objectIndex;
-        count++;
         return true;
     }
     if (!subExist && preExist && objExist) {
@@ -56,9 +57,10 @@ KVstore::insert(const std::string &subject, const std::string &predicate, const 
                         size_t >>(1, std::make_pair(subID, objectIndex))});
         objid2subidpreidList.insert(
                 {objectIndex, std::list<std::pair<size_t, size_t >>(1, std::make_pair(subID, predicateIndex))});
+        count++;
+        triple2id[std::make_tuple(subID, predicateIndex, objectIndex)] = count;
         ++predicateIndex;
         ++objectIndex;
-        count++;
         return true;
     }
     if (subExist && !preExist && objExist) {
@@ -77,9 +79,10 @@ KVstore::insert(const std::string &subject, const std::string &predicate, const 
         objid2subidpreidList.insert(
                 {objectIndex, std::list<std::pair<size_t,
                         size_t >>(1, std::make_pair(subjectIndex, preID))});
+        count++;
+        triple2id[std::make_tuple(subjectIndex, preID, objectIndex)] = count;
         ++subjectIndex;
         ++objectIndex;
-        count++;
         return true;
     }
     if (subExist && preExist) {
@@ -99,9 +102,10 @@ KVstore::insert(const std::string &subject, const std::string &predicate, const 
         preid2subidobjidList.insert(
                 {predicateIndex, std::list<std::pair<size_t,
                         size_t >>(1, std::make_pair(subjectIndex, objID))});
+        count++;
+        triple2id[std::make_tuple(subjectIndex, predicateIndex, objID)] = count;
         ++subjectIndex;
         ++predicateIndex;
-        count++;
         return true;
     }
     if (!subExist && !preExist && objExist) {
@@ -121,8 +125,9 @@ KVstore::insert(const std::string &subject, const std::string &predicate, const 
         preid2subidobjidList[preID].emplace_back(std::make_pair(subID, objectIndex));
         objid2subidpreidList.insert(
                 {objectIndex, std::list<std::pair<size_t, size_t >>(1, std::make_pair(subID, preID))});
-        ++objectIndex;
         count++;
+        triple2id[std::make_tuple(subID, preID, objectIndex)] = count;
+        ++objectIndex;
         return true;
     }
     if (!subExist && preExist) {
@@ -140,8 +145,9 @@ KVstore::insert(const std::string &subject, const std::string &predicate, const 
         objid2subidpreidList[objID].emplace_back(std::make_pair(subID, predicateIndex));
         preid2subidobjidList.insert(
                 {predicateIndex, std::list<std::pair<size_t, size_t >>(1, std::make_pair(subID, objID))});
-        ++predicateIndex;
         count++;
+        triple2id[std::make_tuple(subID, predicateIndex, objID)] = count;
+        ++predicateIndex;
         return true;
     }
     if (subExist) {
@@ -159,8 +165,9 @@ KVstore::insert(const std::string &subject, const std::string &predicate, const 
         objid2subidpreidList[objID].emplace_back(std::make_pair(subjectIndex, preID));
         subid2preidobjidList.insert(
                 {subjectIndex, std::list<std::pair<size_t, size_t >>(1, std::make_pair(preID, objID))});
-        ++subjectIndex;
         count++;
+        triple2id[std::make_tuple(subjectIndex, preID, objID)] = count;
+        ++subjectIndex;
         return true;
     }
     auto subID = subject2id[subject];
@@ -199,6 +206,7 @@ KVstore::insert(const std::string &subject, const std::string &predicate, const 
     else
         objIDList.emplace_back(objID);
     count++;
+    triple2id[std::make_tuple(subID, preID, objID)] = count;
     return true;
 }
 
@@ -225,13 +233,12 @@ KVstore::getTripleBySubPreObj(std::list<Triple> &result, const std::string &subj
     auto subID = subject2id[subject];
     auto preID = predicate2id[predicate];
     auto objID = object2id[object];
-    auto &preIDList = subidobjid2preidList[std::make_pair(subID, objID)];
-    for (const auto &item: preIDList)
-        if (item == preID) {
-            result.emplace_back(Triple(subject, predicate, object));
-            break;
-        }
-    return preIDList.size();
+    auto id = triple2id[std::make_tuple(subID, preID, objID)];
+    if (id != 0) {
+        result.emplace_back(Triple(subject, predicate, object));
+        return 1;
+    }
+    return 0;
 }
 
 size_t

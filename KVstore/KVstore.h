@@ -69,5 +69,5 @@ public:
     std::unordered_map<size_t, std::list<std::pair<size_t, size_t>>> subid2preidobjidList;
     std::unordered_map<size_t, std::list<std::pair<size_t, size_t>>> preid2subidobjidList;
     std::unordered_map<size_t, std::list<std::pair<size_t, size_t>>> objid2subidpreidList;
-
+    std::unordered_map<std::tuple<size_t, size_t, size_t>, size_t, tuple_hash> triple2id;
 };
