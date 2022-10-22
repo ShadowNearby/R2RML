@@ -21,3 +21,4 @@
 #include <utility>
 #include "PairHash.h"
 #include "Triple.h"
+#include <list>

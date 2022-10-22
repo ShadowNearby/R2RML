@@ -15,9 +15,9 @@ protected:
     explicit Test(const std::string &_file_path);
 
     std::fstream fStream_;
-    std::vector<Triple> triple_vec_;
+    std::list<Triple> triple_vec_;
 public:
-    std::vector<Triple> getVector();
+    std::list<Triple> getVector();
 };
 
 class RunTimeTest : public Test

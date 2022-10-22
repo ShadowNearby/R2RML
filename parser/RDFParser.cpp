@@ -10,7 +10,7 @@ RDFParser::RDFParser() : turtleParser_(sin_)
 RDFParser::RDFParser(std::istream &_fin) : turtleParser_(_fin)
 {}
 
-size_t RDFParser::parseFile(std::vector<Triple> &_triple_vector,
+size_t RDFParser::parseFile(std::list<Triple> &_triple_vector,
                             const std::string &_error_log,
                             size_t _startLine)
 {
@@ -253,7 +253,7 @@ size_t RDFParser::parseFile(std::vector<Triple> &_triple_vector,
     return numLines - 1;
 }
 
-size_t RDFParser::parseLines(std::vector<Triple> &_triple_vector,
+size_t RDFParser::parseLines(std::list<Triple> &_triple_vector,
                              const std::string &_lines)
 {
     this->sin_.clear();
