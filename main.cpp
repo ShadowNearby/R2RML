@@ -2,10 +2,10 @@
 // Created by yanjs on 2022/10/3.
 //
 
-#include "test/test.h"
-#include "Database.h"
 #include "parser/RDFParser.h"
 #include "KVstore/KVstore.h"
+#include "omp.h"
+
 
 #define ly false
 #define yjs true
@@ -18,17 +18,18 @@ std::string object = "<http://dag.org#node1726>";
 
 int main()
 {
-
+    omp_set_num_threads(100);
 //    RunTimeTest test(_10k);
     std::fstream f;
     clock_t start, end;
     start = clock();
-    f.open(_10m, std::ios::in);
+    f.open(_100k, std::ios::in);
     RDFParser rdfParser(f);
-    std::vector<Triple> vec;
-    rdfParser.parseFile(vec);
-    Database database;
+    std::vector<Triple> list;
+
+    rdfParser.parseFile(list);
 #if ly
+    Database database;
     for (auto & i : vec) {
         auto triple = &i;
         auto flag = database.handleTriple(triple);
@@ -36,17 +37,32 @@ int main()
     }
 #endif
 #if yjs
-    KVstore kVstore;
-    for (const auto &item: vec)
-        kVstore.insert(item);
-    std::vector<Triple> result;
-//    auto nums = kVstore.getTripleBySubObj(result, subject, object);
-//    for (auto item: result)
-//        printf("%s\n", item.to_string().c_str());
-//    printf("%llu\n", nums);
+
+    KVstore kvstore, _kvstore;
+//#pragma omp parallel for default(none) shared(list) firstprivate(kvstore)
+
+    for (size_t i = 0; i < list.size() / 2; ++i) {
+        kvstore.insert(list[i]);
+    }
+    for (size_t i = list.size() / 2; i < list.size(); ++i) {
+        kvstore.insert(list[i]);
+    }
+    end = clock();
+    printf("%f\n", (double) (end - start) / CLOCKS_PER_SEC);
+    kvstore.merge(_kvstore);
+//    auto nums = kvstore.insert(list);
+//    printf("%llu\t%llu\n", vec.size(), list.size());
+
+
+
+//    std::list<Triple> result;
+//    auto remove = kvstore.remove(vec);
+    printf("%llu\t%llu\t%llu\n", kvstore.subidpreid2objidList.size(), kvstore.subidobjid2preidList.size(),
+           kvstore.preidobjid2subidList.size());
+//    printf("%llu\n", list.size());
 #endif
     end = clock();
-    std::cout << (double) (end - start) / CLOCKS_PER_SEC << std::endl;
+    printf("%f\n", (double) (end - start) / CLOCKS_PER_SEC);
     return 0;
 
 }

@@ -217,7 +217,7 @@ KVstore::insert(const Triple &triple)
 }
 
 size_t
-KVstore::insert(const std::list<Triple> &triples)
+KVstore::insert(const std::vector<Triple> &triples)
 {
     size_t success = 0;
     for (const auto &item: triples)
@@ -428,6 +428,70 @@ bool KVstore::update(const Triple &triple, const std::string &subject, const std
                      const std::string &object)
 {
     return remove(triple) && insert(subject, predicate, object);
+}
+
+void KVstore::merge(const KVstore &store)
+{
+    for (const auto &item: store.subidpreid2objidList) {
+        auto &finalList = this->subidpreid2objidList[item.first];
+        if (finalList.empty())
+            finalList = item.second;
+        else {
+            finalList.insert(finalList.end(), item.second.begin(), item.second.end());
+            finalList.unique();
+        }
+    }
+    for (const auto &item: store.subidobjid2preidList) {
+        auto &finalList = this->subidobjid2preidList[item.first];
+        if (finalList.empty())
+            finalList = item.second;
+        else {
+            finalList.insert(finalList.end(), item.second.begin(), item.second.end());
+            finalList.unique();
+        }
+    }
+    for (const auto &item: store.preidobjid2subidList) {
+        auto &finalList = this->preidobjid2subidList[item.first];
+        if (finalList.empty())
+            finalList = item.second;
+        else {
+            finalList.insert(finalList.end(), item.second.begin(), item.second.end());
+            finalList.unique();
+        }
+    }
+    for (const auto &item: store.subid2preidobjidList) {
+        auto &finalList = this->subid2preidobjidList[item.first];
+        if (finalList.empty())
+            finalList = item.second;
+        else {
+            finalList.insert(finalList.end(), item.second.begin(), item.second.end());
+            finalList.unique();
+        }
+    }
+    for (const auto &item: store.preid2subidobjidList) {
+        auto &finalList = this->preid2subidobjidList[item.first];
+        if (finalList.empty())
+            finalList = item.second;
+        else {
+            finalList.insert(finalList.end(), item.second.begin(), item.second.end());
+            finalList.unique();
+        }
+    }
+    for (const auto &item: store.objid2subidpreidList) {
+        auto &finalList = this->objid2subidpreidList[item.first];
+        if (finalList.empty())
+            finalList = item.second;
+        else {
+            finalList.insert(finalList.end(), item.second.begin(), item.second.end());
+            finalList.unique();
+        }
+    }
+    this->id2object.insert(store.id2object.begin(), store.id2object.end());
+    this->id2predicate.insert(store.id2predicate.begin(), store.id2predicate.end());
+    this->id2subject.insert(store.id2object.begin(), store.id2object.end());
+    this->subject2id.insert(store.subject2id.begin(), store.subject2id.end());
+    this->predicate2id.insert(store.predicate2id.begin(), store.predicate2id.end());
+    this->object2id.insert(store.object2id.begin(), store.object2id.end());
 }
 
 

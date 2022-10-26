@@ -115,4 +115,5 @@ node_modules
 
 #build
 build/
+cmake-build-release/
 

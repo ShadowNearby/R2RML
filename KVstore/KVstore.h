@@ -17,11 +17,13 @@ public:
 
     KVstore();
 
+    void merge(const KVstore &store);
+
     bool insert(const std::string &subject, const std::string &predicate, const std::string &object);
 
     bool insert(const Triple &triple);
 
-    size_t insert(const std::list<Triple> &triples);
+    size_t insert(const std::vector<Triple> &triples);
 
     bool remove(const std::string &subject, const std::string &predicate, const std::string &object);
 

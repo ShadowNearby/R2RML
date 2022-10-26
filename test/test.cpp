@@ -10,7 +10,7 @@ Test::Test(const std::string &_file_path)
     fStream_.open(_file_path, std::ios::in);
 }
 
-std::list<Triple> Test::getVector()
+std::vector<Triple> Test::getVector()
 {
     return this->triple_vec_;
 }
