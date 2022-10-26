@@ -26,7 +26,6 @@ int main()
     f.open(_100k, std::ios::in);
     RDFParser rdfParser(f);
     std::vector<Triple> list;
-
     rdfParser.parseFile(list);
 #if ly
     Database database;
@@ -38,28 +37,18 @@ int main()
 #endif
 #if yjs
 
-    KVstore kvstore, _kvstore;
-//#pragma omp parallel for default(none) shared(list) firstprivate(kvstore)
+    KVstore kvstore;
+#pragma omp parallel for default(none) shared(list) firstprivate(kvstore)
 
     for (size_t i = 0; i < list.size() / 2; ++i) {
         kvstore.insert(list[i]);
     }
-    for (size_t i = list.size() / 2; i < list.size(); ++i) {
-        kvstore.insert(list[i]);
-    }
     end = clock();
     printf("%f\n", (double) (end - start) / CLOCKS_PER_SEC);
-    kvstore.merge(_kvstore);
+//    kvstore.merge(_kvstore);
 //    auto nums = kvstore.insert(list);
 //    printf("%llu\t%llu\n", vec.size(), list.size());
 
-
-
-//    std::list<Triple> result;
-//    auto remove = kvstore.remove(vec);
-    printf("%llu\t%llu\t%llu\n", kvstore.subidpreid2objidList.size(), kvstore.subidobjid2preidList.size(),
-           kvstore.preidobjid2subidList.size());
-//    printf("%llu\n", list.size());
 #endif
     end = clock();
     printf("%f\n", (double) (end - start) / CLOCKS_PER_SEC);
