@@ -10,7 +10,7 @@ add_executable(R2RML main.cpp
         util/Utility.h parser/RDFParser.cpp parser/RDFParser.h
         #        test/test.cpp test/test.h
         Database.cpp Database.h Structures.h
-        KVstore/KVstore.cpp KVstore/KVstore.h util/PairHash.h)
+        KVstore/KVstore.cpp KVstore/KVstore.h util/PairHash.h parser/cmdLine.h)
 find_package(OpenMP)
 if (OpenMP_CXX_FOUND)
     target_link_libraries(R2RML PUBLIC OpenMP::OpenMP_CXX)

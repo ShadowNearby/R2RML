@@ -4,54 +4,66 @@
 
 #include "parser/RDFParser.h"
 #include "KVstore/KVstore.h"
+#include "parser/cmdLine.h"
 #include "omp.h"
 
 
-#define ly false
-#define yjs true
 auto _100 = R"(..\tiny_example)";
 auto _100k = R"(..\example)";
 auto _10m = R"(D:\Download\Claros)";
-std::string subject = "<http://dag.org#node840>";
-std::string predicate = "<http://dag.org#edge>";
-std::string object = "<http://dag.org#node1726>";
 
-int main()
+int main(int argc, char *argv[])
 {
-    omp_set_num_threads(100);
-//    RunTimeTest test(_10k);
+    cmdline::parser parser;
+    parser.add<std::string>("path", 'p', "file path", true);
+    parser.parse_check(argc, argv);
+    auto path = parser.get<std::string>("path");
     std::fstream f;
-    clock_t start, end;
-    start = clock();
-    f.open(_100k, std::ios::in);
+    try {
+        f.open(path, std::ios::in);
+    }
+    catch (const std::ifstream::failure &failure) {
+        printf("Exception opening file!\n");
+    }
     RDFParser rdfParser(f);
     std::vector<Triple> list;
     rdfParser.parseFile(list);
-#if ly
-    Database database;
-    for (auto & i : vec) {
-        auto triple = &i;
-        auto flag = database.handleTriple(triple);
-        if (!flag) std::cout << "error";
-    }
-#endif
-#if yjs
-
     KVstore kvstore;
-#pragma omp parallel for default(none) shared(list) firstprivate(kvstore)
+    kvstore.insert(list);
+    while (true) {
+        int mode;
+        printf("Please select mode:\n"
+               "1:query   2:insert   3:remove   0:quit\n");
+        std::cin >> mode;
+        if (0 == mode) {
+            printf("Bye!");
+            break;
+        }
+        std::string subject, predicate, object;
+        printf("Please input subject(? for variable)\n");
+        std::cin >> subject;
+        printf("Please input predicate(? for variable)\n");
+        std::cin >> predicate;
+        printf("Please input object(? for variable)\n");
+        std::cin >> object;
+        auto start = std::chrono::steady_clock::now();
+        if (1 == mode) {
+            std::vector<Triple> ResultList;
+            auto result = kvstore.query(ResultList, subject, predicate, object);
+            printf("Complete!\n"
+                   "Total query: %llu\n", result);
+        } else if (2 == mode) {
+            auto result = kvstore.insert(subject, predicate, object);
+            printf("Complete!\n");
+        } else {
+            kvstore.remove(subject, predicate, object);
+            printf("Complete!\n");
+        }
+        auto end = std::chrono::steady_clock::now();
+        auto runTime = std::chrono::duration<double>(end - start).count();
+        printf("RunTime: %fs\n", runTime);
 
-    for (size_t i = 0; i < list.size() / 2; ++i) {
-        kvstore.insert(list[i]);
     }
-    end = clock();
-    printf("%f\n", (double) (end - start) / CLOCKS_PER_SEC);
-//    kvstore.merge(_kvstore);
-//    auto nums = kvstore.insert(list);
-//    printf("%llu\t%llu\n", vec.size(), list.size());
-
-#endif
-    end = clock();
-    printf("%f\n", (double) (end - start) / CLOCKS_PER_SEC);
     return 0;
 
 }

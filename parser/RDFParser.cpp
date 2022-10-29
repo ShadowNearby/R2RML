@@ -14,6 +14,7 @@ size_t RDFParser::parseFile(std::vector<Triple> &_triple_vector,
                             const std::string &_error_log,
                             size_t _startLine)
 {
+    auto start = std::chrono::steady_clock::now();
     std::string rawSubject, rawPredicate, rawObject;
     std::string subject, predicate, object;
     std::string objectSubType;
@@ -248,8 +249,11 @@ size_t RDFParser::parseFile(std::vector<Triple> &_triple_vector,
             std::cout.rdbuf(coutBuf);
         }
     }
-    std::cout << "RDFParser parseFile done!" << std::endl;
-
+    auto end = std::chrono::steady_clock::now();
+    auto runTime = std::chrono::duration<double>(end - start).count();
+    printf("RDFParser parseFile done!\n"
+           "Total Triples: %llu\n"
+           "RunTime: %fs\n", numLines - 1, runTime);
     return numLines - 1;
 }
 

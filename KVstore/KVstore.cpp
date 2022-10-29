@@ -22,19 +22,19 @@ KVstore::insert(const std::string &subject, const std::string &predicate, const 
         id2predicate.insert({predicateIndex, predicate});
         id2object.insert({objectIndex, object});
         subidpreid2objidList.insert(
-                {std::make_pair(subjectIndex, predicateIndex), std::list<size_t>(1, objectIndex)});
+                {std::make_pair(subjectIndex, predicateIndex), std::vector<size_t>(1, objectIndex)});
         subidobjid2preidList.insert(
-                {std::make_pair(subjectIndex, objectIndex), std::list<size_t>(1, predicateIndex)});
+                {std::make_pair(subjectIndex, objectIndex), std::vector<size_t>(1, predicateIndex)});
         preidobjid2subidList.insert(
-                {std::make_pair(predicateIndex, objectIndex), std::list<size_t>(1, subjectIndex)});
+                {std::make_pair(predicateIndex, objectIndex), std::vector<size_t>(1, subjectIndex)});
         subid2preidobjidList.insert(
-                {subjectIndex, std::list<std::pair<size_t,
+                {subjectIndex, std::vector<std::pair<size_t,
                         size_t >>(1, std::make_pair(predicateIndex, objectIndex))});
         preid2subidobjidList.insert(
-                {predicateIndex, std::list<std::pair<size_t,
+                {predicateIndex, std::vector<std::pair<size_t,
                         size_t >>(1, std::make_pair(subjectIndex, objectIndex))});
         objid2subidpreidList.insert(
-                {objectIndex, std::list<std::pair<size_t,
+                {objectIndex, std::vector<std::pair<size_t,
                         size_t >>(1, std::make_pair(subjectIndex, predicateIndex))});
         count++;
         triple2id[std::make_tuple(subjectIndex, predicateIndex, objectIndex)] = count;
@@ -47,16 +47,16 @@ KVstore::insert(const std::string &subject, const std::string &predicate, const 
         auto subID = subject2id[subject];
         id2predicate.insert({predicateIndex, predicate});
         id2object.insert({objectIndex, object});
-        subidpreid2objidList.insert({std::make_pair(subID, predicateIndex), std::list<size_t>(1, objectIndex)});
-        subidobjid2preidList.insert({std::make_pair(subID, objectIndex), std::list<size_t>(1, predicateIndex)});
+        subidpreid2objidList.insert({std::make_pair(subID, predicateIndex), std::vector<size_t>(1, objectIndex)});
+        subidobjid2preidList.insert({std::make_pair(subID, objectIndex), std::vector<size_t>(1, predicateIndex)});
         preidobjid2subidList.insert(
-                {std::make_pair(predicateIndex, objectIndex), std::list<size_t>(1, subID)});
+                {std::make_pair(predicateIndex, objectIndex), std::vector<size_t>(1, subID)});
         subid2preidobjidList[subID].emplace_back(std::make_pair(predicateIndex, objectIndex));
         preid2subidobjidList.insert(
-                {predicateIndex, std::list<std::pair<size_t,
+                {predicateIndex, std::vector<std::pair<size_t,
                         size_t >>(1, std::make_pair(subID, objectIndex))});
         objid2subidpreidList.insert(
-                {objectIndex, std::list<std::pair<size_t, size_t >>(1, std::make_pair(subID, predicateIndex))});
+                {objectIndex, std::vector<std::pair<size_t, size_t >>(1, std::make_pair(subID, predicateIndex))});
         count++;
         triple2id[std::make_tuple(subID, predicateIndex, objectIndex)] = count;
         ++predicateIndex;
@@ -68,16 +68,16 @@ KVstore::insert(const std::string &subject, const std::string &predicate, const 
         id2subject.insert({subjectIndex, subject});
         id2object.insert({objectIndex, object});
         subidpreid2objidList.insert(
-                {std::make_pair(subjectIndex, preID), std::list<size_t>(1, objectIndex)});
+                {std::make_pair(subjectIndex, preID), std::vector<size_t>(1, objectIndex)});
         subidobjid2preidList.insert(
-                {std::make_pair(subjectIndex, objectIndex), std::list<size_t>(1, preID)});
+                {std::make_pair(subjectIndex, objectIndex), std::vector<size_t>(1, preID)});
         preidobjid2subidList.insert(
-                {std::make_pair(preID, objectIndex), std::list<size_t>(1, subjectIndex)});
+                {std::make_pair(preID, objectIndex), std::vector<size_t>(1, subjectIndex)});
         subid2preidobjidList.insert(
-                {subjectIndex, std::list<std::pair<size_t, size_t >>(1, std::make_pair(preID, objectIndex))});
+                {subjectIndex, std::vector<std::pair<size_t, size_t >>(1, std::make_pair(preID, objectIndex))});
         preid2subidobjidList[preID].emplace_back(std::make_pair(subjectIndex, objectIndex));
         objid2subidpreidList.insert(
-                {objectIndex, std::list<std::pair<size_t,
+                {objectIndex, std::vector<std::pair<size_t,
                         size_t >>(1, std::make_pair(subjectIndex, preID))});
         count++;
         triple2id[std::make_tuple(subjectIndex, preID, objectIndex)] = count;
@@ -90,17 +90,17 @@ KVstore::insert(const std::string &subject, const std::string &predicate, const 
         id2subject.insert({subjectIndex, subject});
         id2predicate.insert({predicateIndex, predicate});
         subidpreid2objidList.insert(
-                {std::make_pair(subjectIndex, predicateIndex), std::list<size_t>(1, objID)});
+                {std::make_pair(subjectIndex, predicateIndex), std::vector<size_t>(1, objID)});
         subidobjid2preidList.insert(
-                {std::make_pair(subjectIndex, objID), std::list<size_t>(1, predicateIndex)});
+                {std::make_pair(subjectIndex, objID), std::vector<size_t>(1, predicateIndex)});
         preidobjid2subidList.insert(
-                {std::make_pair(predicateIndex, objID), std::list<size_t>(1, subjectIndex)});
+                {std::make_pair(predicateIndex, objID), std::vector<size_t>(1, subjectIndex)});
         objid2subidpreidList[objID].emplace_back(std::make_pair(subjectIndex, predicateIndex));
         subid2preidobjidList.insert(
-                {subjectIndex, std::list<std::pair<size_t,
+                {subjectIndex, std::vector<std::pair<size_t,
                         size_t >>(1, std::make_pair(predicateIndex, objID))});
         preid2subidobjidList.insert(
-                {predicateIndex, std::list<std::pair<size_t,
+                {predicateIndex, std::vector<std::pair<size_t,
                         size_t >>(1, std::make_pair(subjectIndex, objID))});
         count++;
         triple2id[std::make_tuple(subjectIndex, predicateIndex, objID)] = count;
@@ -114,17 +114,17 @@ KVstore::insert(const std::string &subject, const std::string &predicate, const 
         id2object.insert({objectIndex, object});
         auto &objidList = subidpreid2objidList[std::make_pair(subID, preID)];
         if (objidList.empty())
-            subidpreid2objidList.insert({std::make_pair(subID, preID), std::list<size_t>(1, objectIndex)});
+            subidpreid2objidList.insert({std::make_pair(subID, preID), std::vector<size_t>(1, objectIndex)});
         else
             objidList.emplace_back(objectIndex);
         subidobjid2preidList.insert(
-                {std::make_pair(subID, objectIndex), std::list<size_t>(1, preID)});
+                {std::make_pair(subID, objectIndex), std::vector<size_t>(1, preID)});
         preidobjid2subidList.insert(
-                {std::make_pair(preID, objectIndex), std::list<size_t>(1, subID)});
+                {std::make_pair(preID, objectIndex), std::vector<size_t>(1, subID)});
         subid2preidobjidList[subID].emplace_back(std::make_pair(preID, objectIndex));
         preid2subidobjidList[preID].emplace_back(std::make_pair(subID, objectIndex));
         objid2subidpreidList.insert(
-                {objectIndex, std::list<std::pair<size_t, size_t >>(1, std::make_pair(subID, preID))});
+                {objectIndex, std::vector<std::pair<size_t, size_t >>(1, std::make_pair(subID, preID))});
         count++;
         triple2id[std::make_tuple(subID, preID, objectIndex)] = count;
         ++objectIndex;
@@ -136,15 +136,15 @@ KVstore::insert(const std::string &subject, const std::string &predicate, const 
         id2predicate.insert({predicateIndex, predicate});
         auto &preidList = subidpreid2objidList[std::make_pair(subID, objID)];
         if (preidList.empty())
-            subidobjid2preidList.insert({std::make_pair(subID, objID), std::list<size_t>(1, predicateIndex)});
+            subidobjid2preidList.insert({std::make_pair(subID, objID), std::vector<size_t>(1, predicateIndex)});
         else
             preidList.emplace_back(predicateIndex);
-        subidpreid2objidList.insert({std::make_pair(subID, predicateIndex), std::list<size_t>(1, objID)});
-        preidobjid2subidList.insert({std::make_pair(predicateIndex, objID), std::list<size_t>(1, subID)});
+        subidpreid2objidList.insert({std::make_pair(subID, predicateIndex), std::vector<size_t>(1, objID)});
+        preidobjid2subidList.insert({std::make_pair(predicateIndex, objID), std::vector<size_t>(1, subID)});
         subid2preidobjidList[subID].emplace_back(std::make_pair(predicateIndex, objID));
         objid2subidpreidList[objID].emplace_back(std::make_pair(subID, predicateIndex));
         preid2subidobjidList.insert(
-                {predicateIndex, std::list<std::pair<size_t, size_t >>(1, std::make_pair(subID, objID))});
+                {predicateIndex, std::vector<std::pair<size_t, size_t >>(1, std::make_pair(subID, objID))});
         count++;
         triple2id[std::make_tuple(subID, predicateIndex, objID)] = count;
         ++predicateIndex;
@@ -156,15 +156,15 @@ KVstore::insert(const std::string &subject, const std::string &predicate, const 
         id2subject.insert({subjectIndex, subject});
         auto &subidList = preidobjid2subidList[std::make_pair(preID, objID)];
         if (subidList.empty())
-            preidobjid2subidList.insert({std::make_pair(preID, objID), std::list<size_t>(1, subjectIndex)});
+            preidobjid2subidList.insert({std::make_pair(preID, objID), std::vector<size_t>(1, subjectIndex)});
         else
             subidList.emplace_back(subjectIndex);
-        subidpreid2objidList.insert({std::make_pair(subjectIndex, preID), std::list<size_t>(1, objID)});
-        subidobjid2preidList.insert({std::make_pair(subjectIndex, objID), std::list<size_t>(1, preID)});
+        subidpreid2objidList.insert({std::make_pair(subjectIndex, preID), std::vector<size_t>(1, objID)});
+        subidobjid2preidList.insert({std::make_pair(subjectIndex, objID), std::vector<size_t>(1, preID)});
         preid2subidobjidList[preID].emplace_back(std::make_pair(subjectIndex, objID));
         objid2subidpreidList[objID].emplace_back(std::make_pair(subjectIndex, preID));
         subid2preidobjidList.insert(
-                {subjectIndex, std::list<std::pair<size_t, size_t >>(1, std::make_pair(preID, objID))});
+                {subjectIndex, std::vector<std::pair<size_t, size_t >>(1, std::make_pair(preID, objID))});
         count++;
         triple2id[std::make_tuple(subjectIndex, preID, objID)] = count;
         ++subjectIndex;
@@ -182,27 +182,27 @@ KVstore::insert(const std::string &subject, const std::string &predicate, const 
     auto &subIDobjIDList = preid2subidobjidList[preID];
     auto &subIDpreIDList = objid2subidpreidList[objID];
     if (preIDobjIDList.empty())
-        subid2preidobjidList[subID] = std::list<std::pair<size_t, size_t>>(1, std::make_pair(preID, objID));
+        subid2preidobjidList[subID] = std::vector<std::pair<size_t, size_t>>(1, std::make_pair(preID, objID));
     else
         preIDobjIDList.emplace_back(std::make_pair(preID, objID));
     if (subIDobjIDList.empty())
-        preid2subidobjidList[preID] = std::list<std::pair<size_t, size_t>>(1, std::make_pair(subID, objID));
+        preid2subidobjidList[preID] = std::vector<std::pair<size_t, size_t>>(1, std::make_pair(subID, objID));
     else
         subIDobjIDList.emplace_back(std::make_pair(subID, objID));
     if (subIDpreIDList.empty())
-        objid2subidpreidList[objID] = std::list<std::pair<size_t, size_t>>(1, std::make_pair(subID, preID));
+        objid2subidpreidList[objID] = std::vector<std::pair<size_t, size_t>>(1, std::make_pair(subID, preID));
     else
         subIDpreIDList.emplace_back(std::make_pair(subID, preID));
     if (subIDList.empty())
-        preidobjid2subidList[std::make_pair(preID, objID)] = std::list<size_t>(1, subID);
+        preidobjid2subidList[std::make_pair(preID, objID)] = std::vector<size_t>(1, subID);
     else
         subIDList.emplace_back(subID);
     if (preIDList.empty()) {
-        subidobjid2preidList[std::make_pair(subID, objID)] = std::list<size_t>(1, preID);
+        subidobjid2preidList[std::make_pair(subID, objID)] = std::vector<size_t>(1, preID);
     } else
         preIDList.emplace_back(preID);
     if (objIDList.empty())
-        subidpreid2objidList[std::make_pair(subID, preID)] = std::list<size_t>(1, objID);
+        subidpreid2objidList[std::make_pair(subID, preID)] = std::vector<size_t>(1, objID);
     else
         objIDList.emplace_back(objID);
     count++;
@@ -219,15 +219,21 @@ KVstore::insert(const Triple &triple)
 size_t
 KVstore::insert(const std::vector<Triple> &triples)
 {
+    auto start = std::chrono::steady_clock::now();
     size_t success = 0;
     for (const auto &item: triples)
         if (insert(item))
             ++success;
+    auto end = std::chrono::steady_clock::now();
+    auto runTime = std::chrono::duration<double>(end - start).count();
+    printf("Index established!\n"
+           "Total Triples: %llu\n"
+           "RunTime: %fs\n", success, runTime);
     return success;
 }
 
 size_t
-KVstore::getTripleBySubPreObj(std::list<Triple> &result, const std::string &subject, const std::string &predicate,
+KVstore::getTripleBySubPreObj(std::vector<Triple> &result, const std::string &subject, const std::string &predicate,
                               const std::string &object)
 {
     auto subID = subject2id[subject];
@@ -242,7 +248,7 @@ KVstore::getTripleBySubPreObj(std::list<Triple> &result, const std::string &subj
 }
 
 size_t
-KVstore::getTripleListBySubPre(std::list<Triple> &result, const std::string &subject, const std::string &predicate)
+KVstore::getTripleListBySubPre(std::vector<Triple> &result, const std::string &subject, const std::string &predicate)
 {
     auto subID = subject2id[subject];
     auto preID = predicate2id[predicate];
@@ -255,7 +261,7 @@ KVstore::getTripleListBySubPre(std::list<Triple> &result, const std::string &sub
 }
 
 size_t
-KVstore::getTripleBySubObj(std::list<Triple> &result, const std::string &subject, const std::string &object)
+KVstore::getTripleBySubObj(std::vector<Triple> &result, const std::string &subject, const std::string &object)
 {
     auto subID = subject2id[subject];
     auto objID = object2id[object];
@@ -269,7 +275,7 @@ KVstore::getTripleBySubObj(std::list<Triple> &result, const std::string &subject
 }
 
 size_t
-KVstore::getTripleByPreObj(std::list<Triple> &result, const std::string &predicate, const std::string &object)
+KVstore::getTripleByPreObj(std::vector<Triple> &result, const std::string &predicate, const std::string &object)
 {
     auto preID = predicate2id[predicate];
     auto objID = object2id[object];
@@ -282,7 +288,7 @@ KVstore::getTripleByPreObj(std::list<Triple> &result, const std::string &predica
 }
 
 size_t
-KVstore::getTripleBySub(std::list<Triple> &result, const std::string &subject)
+KVstore::getTripleBySub(std::vector<Triple> &result, const std::string &subject)
 {
     auto subID = subject2id[subject];
     auto &preIDobjIDList = subid2preidobjidList[subID];
@@ -295,7 +301,7 @@ KVstore::getTripleBySub(std::list<Triple> &result, const std::string &subject)
 }
 
 size_t
-KVstore::getTripleByPre(std::list<Triple> &result, const std::string &predicate)
+KVstore::getTripleByPre(std::vector<Triple> &result, const std::string &predicate)
 {
     auto preID = predicate2id[predicate];
     auto &subIDobjIDList = preid2subidobjidList[preID];
@@ -309,7 +315,7 @@ KVstore::getTripleByPre(std::list<Triple> &result, const std::string &predicate)
 
 
 size_t
-KVstore::getTripleByObj(std::list<Triple> &result, const std::string &object)
+KVstore::getTripleByObj(std::vector<Triple> &result, const std::string &object)
 {
     auto objId = object2id[object];
     auto &subIDpreIDList = objid2subidpreidList[objId];
@@ -323,7 +329,7 @@ KVstore::getTripleByObj(std::list<Triple> &result, const std::string &object)
 
 
 size_t
-KVstore::getAllTriple(std::list<Triple> &result)
+KVstore::getAllTriple(std::vector<Triple> &result)
 {
     size_t sum = 0;
     for (const auto &preIt: id2predicate) {
@@ -339,22 +345,22 @@ KVstore::getAllTriple(std::list<Triple> &result)
     return sum;
 }
 
-size_t KVstore::query(std::list<Triple> &result, const std::string &subject, const std::string &predicate,
+size_t KVstore::query(std::vector<Triple> &result, const std::string &subject, const std::string &predicate,
                       const std::string &object)
 {
-    if (subject.empty() && predicate.empty() && object.empty())
+    if (subject == "?" && predicate == "?" && object == "?")
         return getAllTriple(result);
-    if (!subject.empty() && predicate.empty() && object.empty())
+    if (subject != "?" && predicate == "?" && object == "?")
         return getTripleBySub(result, subject);
-    if (subject.empty() && !predicate.empty() && object.empty())
+    if (subject == "?" && predicate != "?" && object == "?")
         return getTripleByPre(result, predicate);
-    if (subject.empty() && predicate.empty() && !object.empty())
+    if (subject == "?" && predicate == "?" && object != "?")
         return getTripleByObj(result, object);
-    if (!subject.empty() && !predicate.empty() && object.empty())
+    if (subject != "?" && predicate != "?" && object == "?")
         return getTripleListBySubPre(result, subject, predicate);
-    if (!subject.empty() && predicate.empty() && !object.empty())
+    if (subject != "?" && predicate == "?" && object != "?")
         return getTripleBySubObj(result, subject, object);
-    if (subject.empty() && !predicate.empty() && !object.empty())
+    if (subject == "?" && predicate != "?" && object != "?")
         return getTripleByPreObj(result, predicate, object);
     return getTripleBySubPreObj(result, subject, predicate, object);
 
@@ -362,7 +368,7 @@ size_t KVstore::query(std::list<Triple> &result, const std::string &subject, con
 
 bool KVstore::remove(const std::string &subject, const std::string &predicate, const std::string &object)
 {
-    std::list<Triple> queryResult;
+    std::vector<Triple> queryResult;
     auto queryNums = query(queryResult, subject, predicate, object);
     if (queryNums != 0) {
         auto subID = subject2id[subject];
@@ -404,7 +410,6 @@ bool KVstore::remove(const std::string &subject, const std::string &predicate, c
             object2id.erase(object);
         } else
             subIDpreIDList.remove(std::make_pair(subID, preID));
-        count--;
         return true;
     }
     return false;
@@ -415,7 +420,7 @@ bool KVstore::remove(const Triple &triple)
     return remove(triple.getSubject(), triple.getPredicate(), triple.getObject());
 }
 
-size_t KVstore::remove(const std::list<Triple> &triples)
+size_t KVstore::remove(const std::vector<Triple> &triples)
 {
     size_t success = 0;
     for (const auto &item: triples)

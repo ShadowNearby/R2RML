@@ -29,31 +29,31 @@ public:
 
     bool remove(const Triple &triple);
 
-    size_t remove(const std::list<Triple> &triples);
+    size_t remove(const std::vector<Triple> &triples);
 
     bool
     update(const Triple &triple, const std::string &subject, const std::string &predicate, const std::string &object);
 
-    size_t query(std::list<Triple> &result, const std::string &subject, const std::string &predicate,
+    size_t query(std::vector<Triple> &result, const std::string &subject, const std::string &predicate,
                  const std::string &object);
 
 
-    size_t getTripleBySubPreObj(std::list<Triple> &result, const std::string &subject, const std::string &predicate,
+    size_t getTripleBySubPreObj(std::vector<Triple> &result, const std::string &subject, const std::string &predicate,
                                 const std::string &object);
 
-    size_t getTripleListBySubPre(std::list<Triple> &result, const std::string &subject, const std::string &predicate);
+    size_t getTripleListBySubPre(std::vector<Triple> &result, const std::string &subject, const std::string &predicate);
 
-    size_t getTripleBySubObj(std::list<Triple> &result, const std::string &subject, const std::string &object);
+    size_t getTripleBySubObj(std::vector<Triple> &result, const std::string &subject, const std::string &object);
 
-    size_t getTripleByPreObj(std::list<Triple> &result, const std::string &predicate, const std::string &object);
+    size_t getTripleByPreObj(std::vector<Triple> &result, const std::string &predicate, const std::string &object);
 
-    size_t getTripleBySub(std::list<Triple> &result, const std::string &subject);
+    size_t getTripleBySub(std::vector<Triple> &result, const std::string &subject);
 
-    size_t getTripleByPre(std::list<Triple> &result, const std::string &predicate);
+    size_t getTripleByPre(std::vector<Triple> &result, const std::string &predicate);
 
-    size_t getTripleByObj(std::list<Triple> &result, const std::string &object);
+    size_t getTripleByObj(std::vector<Triple> &result, const std::string &object);
 
-    size_t getAllTriple(std::list<Triple> &result);
+    size_t getAllTriple(std::vector<Triple> &result);
 
 
     size_t subjectIndex;
@@ -65,11 +65,11 @@ public:
     std::unordered_map<std::string, size_t> subject2id;
     std::unordered_map<std::string, size_t> predicate2id;
     std::unordered_map<std::string, size_t> object2id;
-    std::unordered_map<std::pair<size_t, size_t>, std::list<size_t>, pair_hash> subidpreid2objidList;
-    std::unordered_map<std::pair<size_t, size_t>, std::list<size_t>, pair_hash> subidobjid2preidList;
-    std::unordered_map<std::pair<size_t, size_t>, std::list<size_t>, pair_hash> preidobjid2subidList;
-    std::unordered_map<size_t, std::list<std::pair<size_t, size_t>>> subid2preidobjidList;
-    std::unordered_map<size_t, std::list<std::pair<size_t, size_t>>> preid2subidobjidList;
-    std::unordered_map<size_t, std::list<std::pair<size_t, size_t>>> objid2subidpreidList;
+    std::unordered_map<std::pair<size_t, size_t>, std::vector<size_t>, pair_hash> subidpreid2objidList;
+    std::unordered_map<std::pair<size_t, size_t>, std::vector<size_t>, pair_hash> subidobjid2preidList;
+    std::unordered_map<std::pair<size_t, size_t>, std::vector<size_t>, pair_hash> preidobjid2subidList;
+    std::unordered_map<size_t, std::vector<std::pair<size_t, size_t>>> subid2preidobjidList;
+    std::unordered_map<size_t, std::vector<std::pair<size_t, size_t>>> preid2subidobjidList;
+    std::unordered_map<size_t, std::vector<std::pair<size_t, size_t>>> objid2subidpreidList;
     std::unordered_map<std::tuple<size_t, size_t, size_t>, size_t, tuple_hash> triple2id;
 };
