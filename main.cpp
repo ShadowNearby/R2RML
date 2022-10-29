@@ -28,6 +28,7 @@ int main(int argc, char *argv[])
     RDFParser rdfParser(f);
     std::vector<Triple> list;
     rdfParser.parseFile(list);
+    f.close();
     KVstore kvstore;
     kvstore.insert(list);
     while (true) {
@@ -38,6 +39,10 @@ int main(int argc, char *argv[])
         if (0 == mode) {
             printf("Bye!");
             break;
+        }
+        if (mode != 1 && mode != 2 && mode != 3) {
+            printf("Error Input!\n");
+            continue;
         }
         std::string subject, predicate, object;
         printf("Please input subject(? for variable)\n");
@@ -50,12 +55,16 @@ int main(int argc, char *argv[])
         if (1 == mode) {
             std::vector<Triple> ResultList;
             auto result = kvstore.query(ResultList, subject, predicate, object);
-            printf("Complete!\n"
+            f.open(R"(.\output)", std::ios::out);
+            for (auto item: ResultList) {
+                f << item.to_string().c_str() << std::endl;
+            }
+            printf("Complete! Result has been written to output\n"
                    "Total query: %llu\n", result);
         } else if (2 == mode) {
             auto result = kvstore.insert(subject, predicate, object);
             printf("Complete!\n");
-        } else {
+        } else if (3 == mode) {
             kvstore.remove(subject, predicate, object);
             printf("Complete!\n");
         }

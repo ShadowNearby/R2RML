@@ -56,15 +56,9 @@ public:
     size_t getAllTriple(std::vector<Triple> &result);
 
 
-    size_t subjectIndex;
-    size_t predicateIndex;
-    size_t objectIndex;
-    std::unordered_map<size_t, std::string> id2subject;
-    std::unordered_map<size_t, std::string> id2predicate;
-    std::unordered_map<size_t, std::string> id2object;
-    std::unordered_map<std::string, size_t> subject2id;
-    std::unordered_map<std::string, size_t> predicate2id;
-    std::unordered_map<std::string, size_t> object2id;
+    size_t id;
+    std::unordered_map<size_t, std::string> id2string;
+    std::unordered_map<std::string, size_t> string2id;
     std::unordered_map<std::pair<size_t, size_t>, std::vector<size_t>, pair_hash> subidpreid2objidList;
     std::unordered_map<std::pair<size_t, size_t>, std::vector<size_t>, pair_hash> subidobjid2preidList;
     std::unordered_map<std::pair<size_t, size_t>, std::vector<size_t>, pair_hash> preidobjid2subidList;
