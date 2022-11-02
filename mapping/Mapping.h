@@ -5,6 +5,7 @@
 #pragma once
 
 #include "../util/Utility.h"
+#include "../util/Triple.h"
 
 
 class Mapping {
@@ -24,6 +25,68 @@ public:
 
         AUTO
     };
+
+    enum Token {
+        Token_eof,
+        Token_at,
+        Token_space,
+        Token_dot,
+        Token_colon,
+        Token_bracket_start,
+        Token_bracket_end,
+        Token_brace,
+        Token_uri_start,
+        Token_uri_end,
+        Token_logical_table_view_start,
+        Token_logical_table_view_end,
+        Token_semicolon,
+        Token_quote
+    };
+
+    enum Status {
+        _Prefixes,
+        _TripleMap,
+        _LogicalTable,
+        _SubjectMap,
+        _PredicateObjectMap,
+        _Predicate,
+        _ObjectMap,
+        _Null
+    };
+
+
+private:
+    std::ifstream file;
+    std::string f;
+    std::string curTriplesMap;
+    std::string curTableName;
+    std::string curOp;
+    Status status = _Null;
+public:
+    Token readFile(char &c);
+
+    bool read(char &c);
+
+private:
+    char *readStart;
+    char *readEnd;
+    char c;
+
+    bool readEndOfMap();
+
+    void readPrefixes();
+
+    void readLogicalTable();
+
+    void readTriplesMap();
+
+    void readProperties();
+
+    void judgeOperations();
+
+    void readTableName();
+
+
 public:
 //    std::string sql;
 
@@ -40,6 +103,8 @@ public:
         std::string nameSpace;
         TermType termType;
     public:
+        Template() {}
+
         Template(std::string text, TermType termType, std::string nameSpace);
 
         void createTemplateFields();
@@ -59,6 +124,8 @@ public:
         std::string getText() { return text; }
 
         void setText(std::string t) { text = t; }
+
+        void replaceText(std::vector<std::string> &replace);
     };
 
     class SubjectMap {
@@ -68,7 +135,9 @@ public:
         std::vector<std::string> Uris;
 
     public:
-        void setTemplate(Template t) {
+        SubjectMap() {}
+
+        void setTemplate(Template &t) {
             tem = t;
         };
 
@@ -92,7 +161,6 @@ public:
             return Uris;
         };
 
-//    解析template
         std::vector<std::string> getColumns();
     };
 
@@ -103,6 +171,8 @@ public:
         Template objectTemplate;
         std::string objectColumn;
     public:
+        PredicateObjectMap(std::vector<PredicateObjectMap> vector) {}
+
         std::vector<std::string> getPredicates() {
             return predicates;
         }
@@ -131,6 +201,8 @@ public:
     class LogicalTableView {
         std::string uri;
         SelectQuery selectQuery;
+    public:
+        LogicalTableView() {}
 
         std::string getUri() {
             return uri;
@@ -155,6 +227,8 @@ public:
         SubjectMap subjectMap;
         std::vector<std::string> subjects;
         std::vector<PredicateObjectMap> predicateObjectMaps;
+    public:
+        LogicalTable() {}
 
         LogicalTableView getLogicalTableView() {
             return logicalTableView;
@@ -176,8 +250,12 @@ public:
             return subjects;
         }
 
-        void setSubjects(std::vector<std::string> subs) {
+        void setSubjects(std::vector<std::string> &subs) {
             subjects = subs;
+        }
+
+        void setSubjectMap(SubjectMap &sbm) {
+            subjectMap = sbm;
         }
 
         std::vector<PredicateObjectMap> getPredicateObjectMaps() {
@@ -187,8 +265,19 @@ public:
         void setPredicateObjectMap(const std::vector<PredicateObjectMap> &pom) {
             predicateObjectMaps = pom;
         }
+
+        void addPRedicateObjectMap(std::vector<PredicateObjectMap> &pom) {
+            predicateObjectMaps.emplace_back(pom);
+        }
     };
+
+    LogicalTable *curLogicalTable = nullptr;
+    SubjectMap *curSubjectMap = nullptr;
+    Template *curTemplate = nullptr;
+
 
     std::unordered_map<std::string, std::string> prefixes;
     std::unordered_map<std::string, LogicalTable> logicalTables;
+
+    void masterParser();
 };
