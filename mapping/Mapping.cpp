@@ -5,43 +5,48 @@
 #include "Mapping.h"
 
 //Template
-Mapping::Template::Template(std::string text, TermType termType, std::string nameSpace) {
+Mapping::Template::Template(std::string &text, TermType &termType, std::string &nameSpace)
+{
     this->text = text;
     this->termType = termType;
     this->nameSpace = nameSpace;
     createTemplateFields();
 }
 
-void Mapping::Template::createTemplateFields() {
+void Mapping::Template::createTemplateFields()
+{
     std::string tmp = this->text;
     tmp.replace(tmp.begin(), tmp.end(), "\\", " ");
     while (tmp.find('{') != -1) {
-        int from = tmp.find('{') + 1;
-        int to = tmp.find('}');
+        size_t from = tmp.find('{') + 1;
+        size_t to = tmp.find('}');
         fields.push_back(tmp.substr((from, to - from)));
         tmp = tmp.substr(to + 1, tmp.length() - to - 1);
     }
 }
 
-void Mapping::Template::replaceText(std::vector<std::string> &replace) {
-    int from = 0, to = 0;
-    for (int i = 0; i < replace.size(); ++i) {
+void Mapping::Template::replaceText(std::vector<std::string> &replace)
+{
+    size_t from = 0, to = 0;
+    for (auto &i: replace) {
         from = text.find('{', to);
         to = text.find('}', to) + 1;
-        text.replace(from, to - from, replace[i]);
+        text.replace(from, to - from, i);
     }
 }
 
-std::vector<std::string> Mapping::SubjectMap::getColumns() {
+std::vector<std::string> Mapping::SubjectMap::getColumns()
+{
     return tem.getFields();
 }
 
 //--------------parser------------
 //--------------util--------------
-Mapping::Token Mapping::readFile(char &c) {
-//    char c;
-    while (read(c)) {
-        switch (c) {
+Mapping::Token Mapping::readFile(char &ch)
+{
+//    char ch;
+    while (read(ch)) {
+        switch (ch) {
             case '@':
                 return Token_at;
             case ':':
@@ -51,14 +56,14 @@ Mapping::Token Mapping::readFile(char &c) {
             case '"':
                 return Token_quote;
             case '<':
-                if (read(c) && c != '#') {
+                if (read(ch) && ch != '#') {
                     readStart--;
                     return Token_uri_start;
                 } else {
                     return Token_View_start;
                 }
             case '#':
-                if (read(c) && c == '>') {
+                if (read(ch) && ch == '>') {
                     readStart++;
                     return Token_uri_end;
                 } else {
@@ -79,24 +84,26 @@ Mapping::Token Mapping::readFile(char &c) {
             case '\r':
                 continue;
             default:
-                if (c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z') {
-                    curOp += c;
+                if (ch >= 'a' && ch <= 'z' || ch >= 'A' && ch <= 'Z') {
+                    curOp += ch;
                 }
         }
     }
     return Token_eof;
 }
 
-bool Mapping::read(char &c) {
+bool Mapping::read(char &ch)
+{
     if (readStart < readEnd) {
-        c = *(readStart++);
+        ch = *(readStart++);
         return true;
     }
     return false;
 }
 
 //--------------reader-----------------
-void Mapping::masterParser() {
+void Mapping::masterParser()
+{
     file.open("E:\\r2rml_test.txt");
     while (!file.eof()) {
         std::getline(file, f);
@@ -123,6 +130,8 @@ void Mapping::masterParser() {
                 case Token_bracket_end:
                     changeStatus();
                     break;
+                default:
+                    break;
             }
         }
 
@@ -131,7 +140,8 @@ void Mapping::masterParser() {
 }
 
 
-void Mapping::readProperties() {
+void Mapping::readProperties()
+{
     if (status == _Null) {
         std::cout << "should be in a tripleMap\n";
         return;
@@ -160,7 +170,8 @@ void Mapping::readProperties() {
     }
 }
 
-void Mapping::judgeOperations() {
+void Mapping::judgeOperations()
+{
     ///TODO: rr:xxx
     std::string op = curOp;
     curOp.resize(0);
@@ -205,7 +216,8 @@ void Mapping::judgeOperations() {
     }
 }
 
-void Mapping::readTemplate() {
+void Mapping::readTemplate()
+{
     curTemplate = new Template();
     Token next = readFile(c);
     if (next != Token_quote) {
@@ -225,10 +237,13 @@ void Mapping::readTemplate() {
             curTemplate->setText(curOp);
             curTemplate->createTemplateFields();
             break;
+        default:
+            break;
     }
 }
 
-void Mapping::readPrefixes() {
+void Mapping::readPrefixes()
+{
     std::string str, str2;
     int mode = 1;//1:@prefix    2: <xxx#>
     curOp.resize(0);
@@ -253,8 +268,9 @@ void Mapping::readPrefixes() {
     curOp.resize(0);
 }
 
-void Mapping::readTriplesMap() {
-    if (status = _Null) {
+void Mapping::readTriplesMap()
+{
+    if ((status = _Null)) {
         curTripleMap = new TripleMap;
         curOp.resize(0);
         while (readFile(c) != Token_View_end);
@@ -265,7 +281,8 @@ void Mapping::readTriplesMap() {
 }
 
 
-void Mapping::readMap() {
+void Mapping::readMap()
+{
     Token next;
     while (Token_eof != (next = readFile(c))) {
         if (next == Token_colon) {
@@ -279,19 +296,20 @@ void Mapping::readMap() {
     }
 }
 
-void Mapping::readText(std::string p) {
+void Mapping::readText(std::string &p)
+{
     std::string str1, str2;
     int mode = 1;
     curOp.resize(0);
-    for (int i = 0; i < p.size(); ++i) {
+    for (char i: p) {
         if (mode == 1) {
-            if (p[i] == ' ') {
+            if (i == ' ') {
                 mode++;
                 continue;
             }
-            str1 += p[i];
+            str1 += i;
         } else if (mode == 2) {
-            str2 += p[i];
+            str2 += i;
         }
     }
     if (str1 == "rr:class") str1 = "rdf:type";
@@ -323,7 +341,8 @@ void Mapping::readText(std::string p) {
 }
 
 
-void Mapping::changeStatus() {
+void Mapping::changeStatus()
+{
     Token next = readFile(c);
     if (next == Token_semicolon) {
         switch (status) {
