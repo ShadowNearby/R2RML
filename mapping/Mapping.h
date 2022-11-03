@@ -48,7 +48,8 @@ public:
         Token_semicolon,
         Token_quote,
         Token_View_start,
-        Token_View_end
+        Token_View_end,
+        Token_text
     };
 
     enum Status
@@ -67,7 +68,6 @@ public:
     };
 
 
-private:
     size_t TripleMapsNum = 0;
     std::ifstream file;
     std::string f;
@@ -83,7 +83,6 @@ public:
 
     bool read(char &ch);
 
-private:
 
     void readPrefixes();
 
@@ -125,7 +124,8 @@ public:
         std::string nameSpace;
         TermType termType;
     public:
-        Template();
+        Template()
+        {};
 
         Template(std::string &text, TermType &termType, std::string &nameSpace);
 
@@ -166,7 +166,7 @@ public:
 
     public:
         SubjectMap()
-        {}
+        {};
 
         void setTemplate(Template &t)
         {
@@ -212,7 +212,7 @@ public:
         std::string text;
     public:
         PredicateMap()
-        {}
+        {};
 
         std::string getProperty()
         { return property; }
@@ -231,7 +231,7 @@ public:
     {
     public:
         Predicate()
-        {}
+        {};
     };
 
     class ObjectMap
@@ -243,7 +243,7 @@ public:
         Template tmp;
     public:
         ObjectMap()
-        {}
+        {};
 
         std::string getProperty()
         { return property; }
@@ -263,8 +263,8 @@ public:
         void setText(std::string &t)
         { text = t; }
 
-        void addColumn(std::string &c)
-        { column.emplace_back(c); }
+        void addColumn(std::string &val)
+        { column.emplace_back(val); }
 
         void setTemplate(Template &t)
         { tmp = t; }
@@ -274,7 +274,7 @@ public:
     {
     public:
         Object()
-        {}
+        {};
     };
 
     class PredicateObjectMap
@@ -287,7 +287,7 @@ public:
         bool preShortcut = false, objShortcut = false;
     public:
         PredicateObjectMap()
-        {}
+        {};
 
         PredicateMap getPredicateMap()
         { return preMap; }
@@ -326,7 +326,7 @@ public:
         SelectQuery selectQuery;
     public:
         LogicalTableView()
-        {}
+        {};
 
         std::string getUri()
         {
@@ -357,7 +357,7 @@ public:
         Template logicalTableTmp;
     public:
         LogicalTable()
-        {}
+        {};
 
         LogicalTableView getLogicalTableView()
         {
@@ -395,7 +395,7 @@ public:
         std::vector<PredicateObjectMap> predicateObjectMaps;
     public:
         TripleMap()
-        {}
+        {};
 
         void setName(std::string &n)
         { name = n; }
@@ -422,15 +422,25 @@ public:
         { return predicateObjectMaps; }
     };
 
-    TripleMap *curTripleMap = nullptr;
-    LogicalTable *curLogicalTable = nullptr;
-    SubjectMap *curSubjectMap = nullptr;
-    Template *curTemplate = nullptr;
-    PredicateObjectMap *curPredicateObjectMap = nullptr;
-    Predicate *curPredicate = nullptr;
-    Object *curObject = nullptr;
-    PredicateMap *curPredicateMap = nullptr;
-    ObjectMap *curObjectMap = nullptr;
+//    TripleMap *curTripleMap = nullptr;
+    std::shared_ptr<TripleMap> curTripleMap;
+//    SubjectMap *curSubjectMap = nullptr;
+    std::shared_ptr<SubjectMap> curSubjectMap;
+//    LogicalTable *curLogicalTable = nullptr;
+    std::shared_ptr<LogicalTable> curLogicalTable;
+//    Template *curTemplate = nullptr;
+    std::shared_ptr<Template> curTemplate;
+//    PredicateObjectMap *curPredicateObjectMap = nullptr;
+    std::shared_ptr<PredicateObjectMap> curPredicateObjectMap;
+//    Predicate *curPredicate = nullptr;
+    std::shared_ptr<Predicate> curPredicate;
+//    Object *curObject = nullptr;
+    std::shared_ptr<Object> curObject;
+//    PredicateMap *curPredicateMap = nullptr;
+    std::shared_ptr<PredicateMap> curPredicateMap;
+//    ObjectMap *curObjectMap = nullptr;
+    std::shared_ptr<ObjectMap> curObjectMap;
+
 
     std::unordered_map<std::string, std::string> prefixes;
     std::vector<TripleMap> allTripleMaps;
