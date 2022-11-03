@@ -37,6 +37,7 @@ std::vector<std::string> Mapping::SubjectMap::getColumns() {
 }
 
 //--------------parser------------
+//--------------util--------------
 Mapping::Token Mapping::readFile(char &c) {
 //    char c;
     while (read(c)) {
@@ -94,6 +95,7 @@ bool Mapping::read(char &c) {
     return false;
 }
 
+//--------------reader-----------------
 void Mapping::masterParser() {
     file.open("E:\\r2rml_test.txt");
     while (!file.eof()) {
@@ -115,7 +117,6 @@ void Mapping::masterParser() {
                     curOp.resize(0);
                     break;
                 case Token_View_start:
-                    status = _TripleMap;
                     readTriplesMap();
                     curOp.resize(0);
                     break;
@@ -129,23 +130,26 @@ void Mapping::masterParser() {
 
 }
 
+
 void Mapping::readProperties() {
     if (status == _Null) {
-        std::cout << "should in a tripleMap\n";
+        std::cout << "should be in a tripleMap\n";
         return;
     }
     auto p = prefixes[curOp];
     std::string prev = curOp + ":";
     if (!p.empty()) {
         curOp.resize(0);
-        if (readFile(c) == Token_bracket_start && status == _TripleMap) {
+        Token next = readFile(c);
+        if (next == Token_bracket_start && status == _TripleMap) {
             judgeOperations();
-        } else if (readFile(c) == Token_quote) {//maybe template
+        } else if (next == Token_quote) {//maybe template or tableName or column
             judgeOperations();
-        } else if (readFile(c) == Token_colon) {//e.g. rr:class ex:Department
+        } else if (next == Token_colon) {//e.g. rr:class ex:Department
             std::string tmp = prev + curOp + ":";
             curOp.resize(0);
-            if (readFile(c) == Token_semicolon) {
+            next = readFile(c);
+            if (next == Token_semicolon) {
                 tmp += curOp;
                 readText(tmp);
             }
@@ -156,6 +160,73 @@ void Mapping::readProperties() {
     }
 }
 
+void Mapping::judgeOperations() {
+    ///TODO: rr:xxx
+    std::string op = curOp;
+    curOp.resize(0);
+    if (op == "logicalTable") {
+        curLogicalTable = new LogicalTable();
+        curTripleMap->setLogicalTable(*curLogicalTable);
+        status = _LogicalTable;
+        readMap();
+    } else if (op == "subjectMap") {
+        status = _SubjectMap;
+        curSubjectMap = new SubjectMap();
+        curTripleMap->setSubjectMap(*curSubjectMap);
+        readMap();
+    } else if (op == "predicateObjectMap") {
+        status = _PredicateObjectMap;
+        curPredicateObjectMap = new PredicateObjectMap();
+        curTripleMap->addPredicateObjectMap(*curPredicateObjectMap);
+        readMap();
+    } else if (op == "predicateMap") {
+        status = _PredicateMap;
+        curPredicateMap = new PredicateMap();
+        curPredicateObjectMap->setPredicateMap(*curPredicateMap);
+        readMap();
+    } else if (op == "objectMap") {
+        status = _ObjectMap;
+        curObjectMap = new ObjectMap();
+        curPredicateObjectMap->setObjectMap(*curObjectMap);
+        readMap();
+    } else if (op == "tableName") {
+        readTemplate();
+    } else if (op == "sqlQuery") {
+
+    } else if (op == "template") {
+        readTemplate();
+    } else if (op == "column") {
+        if (status == _ObjectMap) {
+            curTemplate = new Template;
+            readTemplate();
+        } else {
+            std::cout << "column property should in an objectMap\n";
+        }
+    }
+}
+
+void Mapping::readTemplate() {
+    curTemplate = new Template();
+    Token next = readFile(c);
+    if (next != Token_quote) {
+        std::cout << "error\n";
+        return;
+    }
+    curTemplate->setText(curOp);
+    switch (status) {
+        case _LogicalTable:
+            curLogicalTable->setTemplate(*curTemplate);
+            break;
+        case _ObjectMap:
+            curObjectMap->setTemplate(*curTemplate);
+            break;
+        case _SubjectMap:
+            curSubjectMap->setTemplate(*curTemplate);
+            curTemplate->setText(curOp);
+            curTemplate->createTemplateFields();
+            break;
+    }
+}
 
 void Mapping::readPrefixes() {
     std::string str, str2;
@@ -183,93 +254,16 @@ void Mapping::readPrefixes() {
 }
 
 void Mapping::readTriplesMap() {
-    curTripleMap = new TripleMap;
-    curOp.resize(0);
-    while (readFile(c) != Token_View_end);
-    curTripleMap->setName(curOp);
-    allTripleMaps.emplace_back(*curTripleMap);
-    TripleMapsIndex.insert(std::make_pair(curOp, TripleMapsNum++));
-
-}
-
-
-void Mapping::judgeOperations() {
-    ///TODO: rr:xxx
-    std::string op = curOp;
-    if (op == "logicalTable") {
-        curLogicalTable = new LogicalTable();
-        curTripleMap->setLogicalTable(*curLogicalTable);
-        status = _LogicalTable;
-        Token next = readFile(c);
-        if (next == Token_bracket_start) {
-            curOp.resize(0);
-            readLogicalTableName();
-        } else if (next == Token_View_start) {
-            curOp.resize(0);
-            readLogicalTableView();
-        }
-    } else if (op == "subjectMap") {
-        status = _SubjectMap;
-        curSubjectMap = new SubjectMap();
-        curTripleMap->setSubjectMap(*curSubjectMap);
-        readMap();
-    } else if (op == "predicateObjectMap") {
-        status = _PredicateObjectMap;
-        curPredicateObjectMap = new PredicateObjectMap();
-        curTripleMap->addPredicateObjectMap(*curPredicateObjectMap);
-        readMap();
-    } else if (op == "predicateMap") {
-        status = _PredicateMap;
-        curPredicateMap = new PredicateMap();
-        curPredicateObjectMap->setPredicateMap(*curPredicateMap);
-        readMap();
-    } else if (op == "objectMap") {
-
-    } else if (op == "tableName") {
-        readTableName();
-    } else if (op == "column") {
-
-    } else if (op == "tableName") {
-        status = _TableName;
-        readTableName();
-        if (readEndOfMap()) status = _TripleMap;
-    } else if (op == "sqlQuery") {
-
-    } else if (op == "class") {
-
-    } else if (op == "template") {
-        curTemplate = new Template();
+    if (status = _Null) {
+        curTripleMap = new TripleMap;
         curOp.resize(0);
-        if (readFile(c) == Token_quote) {
-            curTemplate->setText(curOp);
-            curTemplate->getFields();
-        }
-        if (status == _SubjectMap) curSubjectMap->setTemplate(*curTemplate);
-//        if (readEndOfMap())
-//            status = _TripleMap;
+        while (readFile(c) != Token_View_end);
+        curTripleMap->setName(curOp);
+        allTripleMaps.emplace_back(*curTripleMap);
+        TripleMapsIndex.insert(std::make_pair(curOp, TripleMapsNum++));
     }
 }
 
-void Mapping::readLogicalTableName() {
-    curOp.resize(0);
-    if (readFile(c) == Token_colon) {
-        curLogicalTable->setNameSpace(curOp);
-        curOp.resize(0);
-    } else {
-        std::cout << "expect a namespace\n";
-        return;
-    }
-    if (readFile(c) == Token_quote) {
-        judgeOperations();
-    }
-}
-
-void Mapping::readTableName() {
-    curOp.resize(0);
-    if (readFile(c) == Token_quote) {
-        curLogicalTable->setLogicalTableName(curOp);
-    }
-}
 
 void Mapping::readMap() {
     Token next;
@@ -329,21 +323,12 @@ void Mapping::readText(std::string p) {
 }
 
 
-bool Mapping::readEndOfMap() {
-    while (readFile(c) != Token_eof) {
-        if (c == ';') return false;
-        if (c == ']' && readFile(c) == Token_semicolon) {
-            return true;
-        }
-    }
-    return false;
-}
-
 void Mapping::changeStatus() {
     Token next = readFile(c);
     if (next == Token_semicolon) {
         switch (status) {
             case _LogicalTable:
+            case _TableName:
             case _SubjectMap:
             case _PredicateObjectMap:
                 status = _TripleMap;

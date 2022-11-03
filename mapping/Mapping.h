@@ -79,11 +79,7 @@ public:
 
 private:
 
-    bool readEndOfMap();
-
     void readPrefixes();
-
-    void readLogicalTableName();
 
     void readTriplesMap();
 
@@ -95,6 +91,7 @@ private:
 
     void readMap();
 
+    void readTemplate();
 
     void readText(std::string p);
 
@@ -209,7 +206,7 @@ public:
     protected:
         std::string property;
         std::string text;
-        std::string column;
+        std::vector<std::string> column;
         Template tmp;
     public:
         ObjectMap() {}
@@ -218,7 +215,7 @@ public:
 
         std::string getText() { return text; }
 
-        std::string getColumn() { return column; }
+        std::vector<std::string> getColumn() { return column; }
 
         Template getTemplate() { return tmp; }
 
@@ -226,7 +223,7 @@ public:
 
         void setText(std::string t) { text = t; }
 
-        void setColumn(std::string c) { column = c; }
+        void addColumn(std::string c) { column.emplace_back(c); }
 
         void setTemplate(Template &t) { tmp = t; }
     };
@@ -292,8 +289,9 @@ public:
 
     class LogicalTable {
         LogicalTableView logicalTableView;
-        std::string logicalTableName;
+//        std::string logicalTableName;
         std::string NameSpace;
+        Template logicalTableTmp;
     public:
         LogicalTable() {}
 
@@ -305,15 +303,15 @@ public:
             logicalTableView = ltv;
         }
 
-        std::string getlogicalTableName() {
-            return logicalTableName;
+        Template getTemplate() {
+            return logicalTableTmp;
         }
 
-        void setLogicalTableName(std::string ltn) {
-            logicalTableName = ltn;
+        void setTemplate(Template &ltt) {
+            logicalTableTmp = ltt;
         }
 
-        std::string getNameSpaze() { return NameSpace; }
+        std::string getNameSpace() { return NameSpace; }
 
         void setNameSpace(std::string ns) { NameSpace = ns; }
 
