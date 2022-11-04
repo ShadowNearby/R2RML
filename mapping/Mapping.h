@@ -308,7 +308,7 @@ public:
             logicalTableView = ltv;
         }
 
-        Template getTemplate() {
+        Template &getTemplate() {
             return logicalTableTmp;
         }
 
@@ -340,7 +340,7 @@ public:
 
         std::string getName() { return name; }
 
-        LogicalTable getLogicalTable() { return logicalTable; }
+        LogicalTable &getLogicalTable() { return logicalTable; }
 
         SubjectMap getSubjectMap() { return subjectMap; }
 

@@ -89,7 +89,7 @@ Mapping::Token Mapping::readFile(char &ch) {
 }
 
 bool Mapping::read(char &ch) {
-    if (readStart < readEnd) {
+    if (readStart <= readEnd) {
         ch = *(readStart++);
         return true;
     }
@@ -98,7 +98,7 @@ bool Mapping::read(char &ch) {
 
 //--------------reader-----------------
 void Mapping::masterParser() {
-//    file.open("E:\\r2rml_test.txt");
+    file.open("../input");
     while (!file.eof()) {
         std::getline(file, f);
         readStart = &f[0];
@@ -133,7 +133,7 @@ void Mapping::masterParser() {
                     break;
             }
         }
-        printf("%d\n", allTripleMaps.size());
+//        printf("%d\n", allTripleMaps.size());
     }
 }
 
@@ -143,8 +143,10 @@ void Mapping::readProperties() {
 //        std::cout << "should be in a tripleMap\n";
 //        return;
 //    }
+//    std::cout << prefixes[curOp] << std::endl;
     auto p = prefixes[curOp];
 //    std::string prev = curOp + ":";
+    auto q = prefixes.find(curOp);
     curOp += ":";
     if (1 || !p.empty()) {
         Token next;
@@ -260,14 +262,15 @@ void Mapping::readPrefixes() {
 
 void Mapping::readTriplesMap() {
     if (status == _Null) {
-        auto newTripleMap = std::make_shared<TripleMap>();
+        curTripleMap = std::make_shared<TripleMap>();
         curOp.resize(0);
         while (Token_View_end != readFile(c)) {
             curOp += c;
         }
-        newTripleMap->setName(curOp);
-        allTripleMaps.emplace_back(*newTripleMap);
+        curTripleMap->setName(curOp);
+        allTripleMaps.emplace_back(*curTripleMap);
         TripleMapsIndex[curOp] = TripleMapsNum++;
+        status = _TripleMap;
     }
 }
 
@@ -367,7 +370,7 @@ void Mapping::changeStatus() {
                 std::cout << "error\n";
                 break;
         }
-    } else if (c == '.') {
+    } else if (next == Token_eof && c == '.') {
         status = _Null;
     }
 }

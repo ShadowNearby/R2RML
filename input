@@ -1,5 +1,13 @@
-1
-<http://dag.org#node840>
-<http://dag.org#edge>
-?
-0
+@prefix rr: <http://www.w3.org/ns/r2rml#>.
+@prefix ex: <http://example.com/ns#>.
+
+<#SiteTriplesMap>
+    rr:logicalTable [ rr:tableName "DEPT" ];
+    rr:subjectMap [
+        rr:template "site/{LOC}";
+        rr:class ex:Site;
+    ];
+    rr:predicateObjectMap [
+        rr:predicate ex:siteName;
+        rr:objectMap [ ex:column "LOC" ];
+    ].

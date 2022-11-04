@@ -9,6 +9,8 @@ add_executable(R2RML main.cpp
         util/Triple.h util/Triple.cpp
         parser/Type.h parser/TurtleParser.h parser/TurtleParser.cpp
         util/Utility.h parser/RDFParser.cpp parser/RDFParser.h
+        util/Logger.h
         #        test/test.cpp test/test.h
-        KVstore/KVstore.cpp KVstore/KVstore.h util/PairHash.h parser/cmdLine.h mapping/Mapping.cpp mapping/Mapping.h)
+        KVstore/KVstore.cpp KVstore/KVstore.h
+        util/PairHash.h parser/cmdLine.h mapping/Mapping.cpp mapping/Mapping.h)
 target_link_libraries(R2RML ${CMAKE_SOURCE_DIR}/bin/libmysql.dll)
