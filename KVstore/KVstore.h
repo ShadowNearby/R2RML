@@ -38,22 +38,22 @@ public:
                  const std::string &object);
 
 
-    size_t getTripleBySubPreObj(std::vector<Triple> &result, const std::string &subject, const std::string &predicate,
-                                const std::string &object);
+    size_t getTriplesBySubPreObj(std::vector<Triple> &result, const std::string &subject, const std::string &predicate,
+                                 const std::string &object);
 
-    size_t getTripleBySubPre(std::vector<Triple> &result, const std::string &subject, const std::string &predicate);
+    size_t getTriplesBySubPre(std::vector<Triple> &result, const std::string &subject, const std::string &predicate);
 
-    size_t getTripleBySubObj(std::vector<Triple> &result, const std::string &subject, const std::string &object);
+    size_t getTriplesBySubObj(std::vector<Triple> &result, const std::string &subject, const std::string &object);
 
-    size_t getTripleByPreObj(std::vector<Triple> &result, const std::string &predicate, const std::string &object);
+    size_t getTriplesByPreObj(std::vector<Triple> &result, const std::string &predicate, const std::string &object);
 
-    size_t getTripleBySub(std::vector<Triple> &result, const std::string &subject);
+    size_t getTriplesBySub(std::vector<Triple> &result, const std::string &subject);
 
-    size_t getTripleByPre(std::vector<Triple> &result, const std::string &predicate);
+    size_t getTriplesByPre(std::vector<Triple> &result, const std::string &predicate);
 
-    size_t getTripleByObj(std::vector<Triple> &result, const std::string &object);
+    size_t getTriplesByObj(std::vector<Triple> &result, const std::string &object);
 
-    size_t getAllTriple(std::vector<Triple> &result);
+    size_t getAllTriples(std::vector<Triple> &result);
 
 
     size_t id;

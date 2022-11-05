@@ -41,18 +41,24 @@ struct rrPrefix
 };
 enum TermMapType
 {
-    constant_,
-    column_,
-    template_
+    Null,
+    Constant_,
+    Column_,
+    Template_
 };
 
 class TermMap
 {
 public:
     TermMapType type;
-    std::string constant;
-    std::string column;
+    std::string constant_;
+    std::string column_;
     std::string template_;
+
+    [[nodiscard]] bool empty() const
+    {
+        return constant_.empty() && column_.empty() && template_.empty();
+    }
 };
 
 class LogicalTable
@@ -60,12 +66,22 @@ class LogicalTable
 public:
     std::string tableName;
     std::string sqlQuery;
+
+    [[nodiscard]] bool empty() const
+    {
+        return tableName.empty() && sqlQuery.empty();
+    }
 };
 
 class GraphMap
 {
 public:
     TermMap termMap;
+
+    [[nodiscard]] bool empty() const
+    {
+        return termMap.empty();
+    }
 };
 
 
@@ -76,6 +92,11 @@ public:
     TermMap termMap;
     std::string graph;
     GraphMap graphMap;
+
+    [[nodiscard]] bool empty() const
+    {
+        return subjectClass.empty() && termMap.empty() && graph.empty() && graphMap.empty();
+    }
 };
 
 class PredicateMap
@@ -83,6 +104,10 @@ class PredicateMap
 public:
     TermMap termMap;
 
+    [[nodiscard]] bool empty() const
+    {
+        return termMap.empty();
+    }
 };
 
 class Join
@@ -90,6 +115,11 @@ class Join
 public:
     std::string child;
     std::string parent;
+
+    [[nodiscard]] bool empty() const
+    {
+        return child.empty() && parent.empty();
+    }
 };
 
 class RefObjectMap
@@ -98,6 +128,11 @@ class RefObjectMap
 public:
     std::string parentTripleMap;
     Join join;
+
+    [[nodiscard]] bool empty() const
+    {
+        return join.empty() && parentTripleMap.empty();
+    }
 };
 
 class ObjectMap
@@ -106,6 +141,11 @@ public:
 
     RefObjectMap refObjectMap;
     TermMap termMap;
+
+    [[nodiscard]] bool empty() const
+    {
+        return termMap.empty() && refObjectMap.empty();
+    }
 };
 
 
@@ -117,6 +157,11 @@ public:
     std::string predicate;
     std::string object;
 
+    [[nodiscard]] bool empty() const
+    {
+        return objectMap.empty() && predicate.empty() && object.empty() && predicate.empty();
+    }
+
 };
 
 class TriplesMap
@@ -125,4 +170,9 @@ public:
     LogicalTable logicalTable;
     SubjectMap subjectMap;
     std::vector<PredicateObjectMap> predicateObjectMaps;
+
+    [[nodiscard]] bool empty() const
+    {
+        return subjectMap.empty() && logicalTable.empty() && predicateObjectMaps.empty();
+    }
 };

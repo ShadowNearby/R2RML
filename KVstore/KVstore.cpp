@@ -94,8 +94,8 @@ KVstore::insert(const std::vector<Triple> &triples)
 }
 
 size_t
-KVstore::getTripleBySubPreObj(std::vector<Triple> &result, const std::string &subject, const std::string &predicate,
-                              const std::string &object)
+KVstore::getTriplesBySubPreObj(std::vector<Triple> &result, const std::string &subject, const std::string &predicate,
+                               const std::string &object)
 {
     result.clear();
     auto subID = string2id[subject];
@@ -110,7 +110,7 @@ KVstore::getTripleBySubPreObj(std::vector<Triple> &result, const std::string &su
 }
 
 size_t
-KVstore::getTripleBySubPre(std::vector<Triple> &result, const std::string &subject, const std::string &predicate)
+KVstore::getTriplesBySubPre(std::vector<Triple> &result, const std::string &subject, const std::string &predicate)
 {
     result.clear();
     auto subID = string2id[subject];
@@ -124,7 +124,7 @@ KVstore::getTripleBySubPre(std::vector<Triple> &result, const std::string &subje
 }
 
 size_t
-KVstore::getTripleBySubObj(std::vector<Triple> &result, const std::string &subject, const std::string &object)
+KVstore::getTriplesBySubObj(std::vector<Triple> &result, const std::string &subject, const std::string &object)
 {
     result.clear();
     auto subID = string2id[subject];
@@ -139,7 +139,7 @@ KVstore::getTripleBySubObj(std::vector<Triple> &result, const std::string &subje
 }
 
 size_t
-KVstore::getTripleByPreObj(std::vector<Triple> &result, const std::string &predicate, const std::string &object)
+KVstore::getTriplesByPreObj(std::vector<Triple> &result, const std::string &predicate, const std::string &object)
 {
     result.clear();
     auto preID = string2id[predicate];
@@ -153,7 +153,7 @@ KVstore::getTripleByPreObj(std::vector<Triple> &result, const std::string &predi
 }
 
 size_t
-KVstore::getTripleBySub(std::vector<Triple> &result, const std::string &subject)
+KVstore::getTriplesBySub(std::vector<Triple> &result, const std::string &subject)
 {
     result.clear();
     auto subID = string2id[subject];
@@ -167,7 +167,7 @@ KVstore::getTripleBySub(std::vector<Triple> &result, const std::string &subject)
 }
 
 size_t
-KVstore::getTripleByPre(std::vector<Triple> &result, const std::string &predicate)
+KVstore::getTriplesByPre(std::vector<Triple> &result, const std::string &predicate)
 {
     result.clear();
     auto preID = string2id[predicate];
@@ -182,7 +182,7 @@ KVstore::getTripleByPre(std::vector<Triple> &result, const std::string &predicat
 
 
 size_t
-KVstore::getTripleByObj(std::vector<Triple> &result, const std::string &object)
+KVstore::getTriplesByObj(std::vector<Triple> &result, const std::string &object)
 {
     result.clear();
     auto objId = string2id[object];
@@ -197,7 +197,7 @@ KVstore::getTripleByObj(std::vector<Triple> &result, const std::string &object)
 
 
 size_t
-KVstore::getAllTriple(std::vector<Triple> &result)
+KVstore::getAllTriples(std::vector<Triple> &result)
 {
     result.clear();
     size_t sum = 0;
@@ -219,20 +219,20 @@ size_t KVstore::query(std::vector<Triple> &result, const std::string &subject, c
 {
     result.clear();
     if (subject == "?" && predicate == "?" && object == "?")
-        return getAllTriple(result);
+        return getAllTriples(result);
     if (subject != "?" && predicate == "?" && object == "?")
-        return getTripleBySub(result, subject);
+        return getTriplesBySub(result, subject);
     if (subject == "?" && predicate != "?" && object == "?")
-        return getTripleByPre(result, predicate);
+        return getTriplesByPre(result, predicate);
     if (subject == "?" && predicate == "?" && object != "?")
-        return getTripleByObj(result, object);
+        return getTriplesByObj(result, object);
     if (subject != "?" && predicate != "?" && object == "?")
-        return getTripleBySubPre(result, subject, predicate);
+        return getTriplesBySubPre(result, subject, predicate);
     if (subject != "?" && predicate == "?" && object != "?")
-        return getTripleBySubObj(result, subject, object);
+        return getTriplesBySubObj(result, subject, object);
     if (subject == "?" && predicate != "?" && object != "?")
-        return getTripleByPreObj(result, predicate, object);
-    return getTripleBySubPreObj(result, subject, predicate, object);
+        return getTriplesByPreObj(result, predicate, object);
+    return getTriplesBySubPreObj(result, subject, predicate, object);
 
 }
 
