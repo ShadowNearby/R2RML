@@ -97,6 +97,7 @@ size_t
 KVstore::getTripleBySubPreObj(std::vector<Triple> &result, const std::string &subject, const std::string &predicate,
                               const std::string &object)
 {
+    result.clear();
     auto subID = string2id[subject];
     auto preID = string2id[predicate];
     auto objID = string2id[object];
@@ -109,8 +110,9 @@ KVstore::getTripleBySubPreObj(std::vector<Triple> &result, const std::string &su
 }
 
 size_t
-KVstore::getTripleListBySubPre(std::vector<Triple> &result, const std::string &subject, const std::string &predicate)
+KVstore::getTripleBySubPre(std::vector<Triple> &result, const std::string &subject, const std::string &predicate)
 {
+    result.clear();
     auto subID = string2id[subject];
     auto preID = string2id[predicate];
     auto &objIDList = subidpreid2objidList[std::make_pair(subID, preID)];
@@ -124,6 +126,7 @@ KVstore::getTripleListBySubPre(std::vector<Triple> &result, const std::string &s
 size_t
 KVstore::getTripleBySubObj(std::vector<Triple> &result, const std::string &subject, const std::string &object)
 {
+    result.clear();
     auto subID = string2id[subject];
     auto objID = string2id[object];
     auto &preIDList = subidobjid2preidList[std::make_pair(subID, objID)];
@@ -138,6 +141,7 @@ KVstore::getTripleBySubObj(std::vector<Triple> &result, const std::string &subje
 size_t
 KVstore::getTripleByPreObj(std::vector<Triple> &result, const std::string &predicate, const std::string &object)
 {
+    result.clear();
     auto preID = string2id[predicate];
     auto objID = string2id[object];
     auto &subIDList = preidobjid2subidList[std::make_pair(preID, objID)];
@@ -151,6 +155,7 @@ KVstore::getTripleByPreObj(std::vector<Triple> &result, const std::string &predi
 size_t
 KVstore::getTripleBySub(std::vector<Triple> &result, const std::string &subject)
 {
+    result.clear();
     auto subID = string2id[subject];
     auto &preIDobjIDList = subid2preidobjidList[subID];
     for (const auto &item: preIDobjIDList) {
@@ -164,6 +169,7 @@ KVstore::getTripleBySub(std::vector<Triple> &result, const std::string &subject)
 size_t
 KVstore::getTripleByPre(std::vector<Triple> &result, const std::string &predicate)
 {
+    result.clear();
     auto preID = string2id[predicate];
     auto &subIDobjIDList = preid2subidobjidList[preID];
     for (const auto &item: subIDobjIDList) {
@@ -178,6 +184,7 @@ KVstore::getTripleByPre(std::vector<Triple> &result, const std::string &predicat
 size_t
 KVstore::getTripleByObj(std::vector<Triple> &result, const std::string &object)
 {
+    result.clear();
     auto objId = string2id[object];
     auto &subIDpreIDList = objid2subidpreidList[objId];
     for (const auto &item: subIDpreIDList) {
@@ -192,6 +199,7 @@ KVstore::getTripleByObj(std::vector<Triple> &result, const std::string &object)
 size_t
 KVstore::getAllTriple(std::vector<Triple> &result)
 {
+    result.clear();
     size_t sum = 0;
     for (const auto &preIt: preid2subidobjidList) {
         auto predicate = id2string[preIt.first];
@@ -209,6 +217,7 @@ KVstore::getAllTriple(std::vector<Triple> &result)
 size_t KVstore::query(std::vector<Triple> &result, const std::string &subject, const std::string &predicate,
                       const std::string &object)
 {
+    result.clear();
     if (subject == "?" && predicate == "?" && object == "?")
         return getAllTriple(result);
     if (subject != "?" && predicate == "?" && object == "?")
@@ -218,7 +227,7 @@ size_t KVstore::query(std::vector<Triple> &result, const std::string &subject, c
     if (subject == "?" && predicate == "?" && object != "?")
         return getTripleByObj(result, object);
     if (subject != "?" && predicate != "?" && object == "?")
-        return getTripleListBySubPre(result, subject, predicate);
+        return getTripleBySubPre(result, subject, predicate);
     if (subject != "?" && predicate == "?" && object != "?")
         return getTripleBySubObj(result, subject, object);
     if (subject == "?" && predicate != "?" && object != "?")

@@ -4,15 +4,9 @@
 
 #include "Mapping.h"
 
-//Template
-Mapping::Template::Template(std::string &text, TermType &termType, std::string &nameSpace) {
-    this->text = text;
-    this->termType = termType;
-    this->nameSpace = nameSpace;
-    createTemplateFields();
-}
 
-void Mapping::Template::createTemplateFields() {
+void Mapping::Template::createTemplateFields()
+{
     std::string tmp = this->text;
     tmp.replace(tmp.begin(), tmp.end(), "\\", " ");
     while (tmp.find('{') != -1) {
@@ -23,7 +17,8 @@ void Mapping::Template::createTemplateFields() {
     }
 }
 
-void Mapping::Template::replaceText(std::vector<std::string> &replace) {
+void Mapping::Template::replaceText(std::vector<std::string> &replace)
+{
     size_t from = 0, to = 0;
     for (auto &i: replace) {
         from = text.find('{', to);
@@ -32,13 +27,15 @@ void Mapping::Template::replaceText(std::vector<std::string> &replace) {
     }
 }
 
-std::vector<std::string> Mapping::SubjectMap::getColumns() {
+std::vector<std::string> Mapping::SubjectMap::getColumns()
+{
     return tem.getFields();
 }
 
 //--------------parser------------
 //--------------util--------------
-Mapping::Token Mapping::readFile(char &ch) {
+Mapping::Token Mapping::readFile(char &ch)
+{
 //    char ch;
     while (read(ch)) {
         switch (ch) {
@@ -88,7 +85,8 @@ Mapping::Token Mapping::readFile(char &ch) {
     return Token_eof;
 }
 
-bool Mapping::read(char &ch) {
+bool Mapping::read(char &ch)
+{
     if (readStart <= readEnd) {
         ch = *(readStart++);
         return true;
@@ -97,7 +95,8 @@ bool Mapping::read(char &ch) {
 }
 
 //--------------reader-----------------
-void Mapping::masterParser() {
+void Mapping::masterParser()
+{
     file.open("../input");
     while (!file.eof()) {
         std::getline(file, f);
@@ -138,7 +137,8 @@ void Mapping::masterParser() {
 }
 
 
-void Mapping::readProperties() {
+void Mapping::readProperties()
+{
 //    if (status == _Null) {
 //        std::cout << "should be in a tripleMap\n";
 //        return;
@@ -165,39 +165,45 @@ void Mapping::readProperties() {
             } else if (next == Token_semicolon) {
                 if (isText) readText(curOp);
                 break;
+            } else if (next == Token_bracket_end) {
+                changeStatus();
+                return;
             }
         }
 
     }
 }
 
-void Mapping::judgeOperations() {
+void Mapping::judgeOperations()
+{
     std::string op = curOp;
     curOp.resize(0);
     if (op == "rr:logicalTable") {
         status = _LogicalTable;
         curLogicalTable = std::make_shared<LogicalTable>();
-        curTripleMap->setLogicalTable(*curLogicalTable);
+//        curTripleMap->setLogicalTable(*curLogicalTable);
+//        LogicalTable newLogicalTable;
+
         readMap();
     } else if (op == "rr:subjectMap") {
         status = _SubjectMap;
         curSubjectMap = std::make_shared<SubjectMap>();
-        curTripleMap->setSubjectMap(*curSubjectMap);
+//        curTripleMap->setSubjectMap(*curSubjectMap);
         readMap();
     } else if (op == "rr:predicateObjectMap") {
         status = _PredicateObjectMap;
         curPredicateObjectMap = std::make_shared<PredicateObjectMap>();
-        curTripleMap->addPredicateObjectMap(*curPredicateObjectMap);
+//        curTripleMap->addPredicateObjectMap(*curPredicateObjectMap);
         readMap();
     } else if (op == "rr:predicateMap") {
         status = _PredicateMap;
         curPredicateMap = std::make_shared<PredicateMap>();
-        curPredicateObjectMap->setPredicateMap(*curPredicateMap);
+//        curPredicateObjectMap->setPredicateMap(*curPredicateMap);
         readMap();
     } else if (op == "rr:objectMap") {
         status = _ObjectMap;
         curObjectMap = std::make_shared<ObjectMap>();
-        curPredicateObjectMap->setObjectMap(*curObjectMap);
+//        curPredicateObjectMap->setObjectMap(*curObjectMap);
         readMap();
     } else if (op == "rr:tableName") {
         readTemplate();
@@ -205,31 +211,36 @@ void Mapping::judgeOperations() {
         status = _SqlQuery;
         curSelectQuery = std::make_shared<SelectQuery>();
         curLogicalTableView = std::make_shared<LogicalTableView>();
-        curLogicalTableView->setSelectQuery(*curSelectQuery);
-        curLogicalTable->setLogicalTableView(*curLogicalTableView);
+//        curLogicalTableView->setSelectQuery(*curSelectQuery);
+//        curLogicalTable->setLogicalTableView(*curLogicalTableView);
         while (readFile(c) == Token_quote);
     } else if (op == "rr:template") {
         readTemplate();
-    } else if (op == "ex:column") {
+    } else if (op == "ex:column_") {
         if (status == _ObjectMap) {
             curTemplate = std::make_shared<Template>();
             readTemplate();
         } else {
-            std::cout << "column property should in an objectMap\n";
+            std::cout << "column_ property should in an objectMap\n";
         }
     }
 }
 
-void Mapping::readTemplate() {
+void Mapping::readTemplate()
+{
     curTemplate = std::make_shared<Template>();
+//    Template newTemplate;
     Token next;
     while (Token_text == (next = readFile(c))) {
         curOp += c;
     }
+//    newTemplate.setText(curOp);
     curTemplate->setText(curOp);
+    curTemplate->createTemplateFields();
     switch (status) {
         case _LogicalTable:
             curLogicalTable->setTemplate(*curTemplate);
+//            curLogicalTable->setTemplate(newTemplate);
             break;
         case _ObjectMap:
             curObjectMap->setTemplate(*curTemplate);
@@ -244,7 +255,8 @@ void Mapping::readTemplate() {
     }
 }
 
-void Mapping::readPrefixes() {
+void Mapping::readPrefixes()
+{
     std::string str, str2;
     int mode = 1;//1:@prefix    2: <xxx#>
 //    curOp.resize(0);
@@ -260,7 +272,8 @@ void Mapping::readPrefixes() {
     curOp.resize(0);
 }
 
-void Mapping::readTriplesMap() {
+void Mapping::readTriplesMap()
+{
     if (status == _Null) {
         curTripleMap = std::make_shared<TripleMap>();
         curOp.resize(0);
@@ -275,7 +288,8 @@ void Mapping::readTriplesMap() {
 }
 
 
-void Mapping::readMap() {
+void Mapping::readMap()
+{
     Token next;
     while (Token_eof != (next = readFile(c))) {
         switch (next) {
@@ -285,12 +299,18 @@ void Mapping::readMap() {
             case Token_colon:
                 readProperties();
                 break;
+            case Token_bracket_end:
+                changeStatus();
+                return;
+            default:
+                break;
         }
-        curOp.resize(0);
     }
+    curOp.resize(0);
 }
 
-void Mapping::readText(std::string &p) {
+void Mapping::readText(std::string &p)
+{
     std::string str1, str2;
     int mode = 1;
     for (char i: p) {
@@ -313,28 +333,29 @@ void Mapping::readText(std::string &p) {
         if (str1 == "rr:predicate") {
             curPredicate = std::make_shared<Predicate>();
             curPredicate->setText(str2);
-            curPredicateObjectMap->setPredicate(*curPredicate);
+//            curPredicateObjectMap->setPredicate(*curPredicate);
             curPredicateObjectMap->setPreShortCut();
         } else if (str1 == "rr:object") {
             curObject = std::make_shared<Object>();
             curObject->setText(str2);
-            curPredicateObjectMap->setObject(*curObject);
+//            curPredicateObjectMap->setObject(*curObject);
             curPredicateObjectMap->setObjShortCut();
         }
     } else if (status == _PredicateMap) {
         curPredicateMap->setProperty(str1);
-        if (str1 == "rr:constant") {
+        if (str1 == "rr:constant_") {
             curPredicateMap->setText(str2);
         }
     } else if (status == _ObjectMap) {
         curObjectMap->setProperty(str1);
-        if (str1 == "rr:constant") {
+        if (str1 == "rr:constant_") {
             curObjectMap->setText(str2);
         }
     }
 }
 
-void Mapping::readSqlQuery() {
+void Mapping::readSqlQuery()
+{
     std::string str;
     Token next;
     while (Token_eof != (next = readFile(c))) {
@@ -351,19 +372,34 @@ void Mapping::readSqlQuery() {
 }
 
 
-void Mapping::changeStatus() {
+void Mapping::changeStatus()
+{
     Token next = readFile(c);
     if (next == Token_semicolon) {
         switch (status) {
-            case _LogicalTable:
             case _SqlQuery:
-            case _SubjectMap:
-            case _PredicateObjectMap:
+                addLogicalTableView();
+            case _LogicalTable:
+                addLogicalTable();
                 status = _TripleMap;
                 break;
-            case _Predicate:
+            case _SubjectMap:
+                addSubjectMap();
+                status = _TripleMap;
+                break;
+            case _PredicateObjectMap:
+                addPredicateObjectMap();
+                status = _TripleMap;
+                break;
             case _ObjectMap:
+                addObjectMap();
+                status = _PredicateObjectMap;
+                break;
             case _PredicateMap:
+                addPredicateMap();
+                status = _PredicateObjectMap;
+                break;
+            case _Predicate:
             case _Object:
                 status = _PredicateObjectMap;
             default:
@@ -371,6 +407,7 @@ void Mapping::changeStatus() {
                 break;
         }
     } else if (next == Token_eof && c == '.') {
+        addTripleMap();
         status = _Null;
     }
 }

@@ -11,19 +11,23 @@
 #include "../util/PairHash.h"
 
 
-class Mapping {
+class Mapping
+{
 public:
-    Mapping() {}
+    Mapping()
+    {}
 
 public:
-    enum TermType {
+    enum TermType
+    {
         IRI,
         BLANKNODE,
         LITERAL,
         AUTO
     };
 
-    enum Token {
+    enum Token
+    {
         Token_eof,
         Token_at,
         Token_space,
@@ -41,7 +45,8 @@ public:
         Token_text
     };
 
-    enum Status {
+    enum Status
+    {
         _Prefixes,
         _TripleMap,
         _LogicalTable,
@@ -59,7 +64,6 @@ public:
     size_t TripleMapsNum = 0;
     std::ifstream file;
     std::string f;
-    std::string curTriplesMap;
     std::string curTableName;
     std::string curOp;
     char *readStart;
@@ -90,10 +94,80 @@ public:
 
     void readSqlQuery();
 
-    ///TODO
+
     void readLogicalTableView();
 
     void changeStatus();
+
+    void addLogicalTableView()
+    {
+        if (status == _SqlQuery) {
+            curLogicalTableView->setSelectQuery(*curSelectQuery);
+            curLogicalTable->setLogicalTableView(*curLogicalTableView);
+            curSelectQuery = nullptr;
+            curLogicalTableView = nullptr;
+            return;
+        }
+    }
+
+    void addLogicalTable()
+    {
+        curTripleMap->setLogicalTable(*curLogicalTable);
+        curLogicalTable = nullptr;
+    }
+
+    void addSubjectMap()
+    {
+        if (curTemplate) {
+            curSubjectMap->setTemplate(*curTemplate);
+            curTemplate = nullptr;
+        }
+        curTripleMap->setSubjectMap(*curSubjectMap);
+        curSubjectMap = nullptr;
+    }
+
+    void addPredicateObjectMap()
+    {
+        if (curPredicateObjectMap->usePreShortCut()) {
+            curPredicateObjectMap->setPredicate(*curPredicate);
+            curPredicate = nullptr;
+        } else {
+            curPredicateObjectMap->setPredicateMap(*curPredicateMap);
+            curPredicateMap = nullptr;
+        }
+
+        if (curPredicateObjectMap->useObjShortCut()) {
+            curPredicateObjectMap->setObject(*curObject);
+            curObject = nullptr;
+        } else {
+            curPredicateObjectMap->setObjectMap(*curObjectMap);
+            curObjectMap = nullptr;
+        }
+    }
+
+    void addPredicateMap()
+    {
+        if (curTemplate) {
+            curPredicateMap->setTemplate(*curTemplate);
+            curTemplate = nullptr;
+        }
+    }
+
+    void addObjectMap()
+    {
+        if (curTemplate) {
+            curObjectMap->setTemplate(*curTemplate);
+            curTemplate = nullptr;
+        }
+    }
+
+    void addTripleMap()
+    {
+        if (curTripleMap) {
+            allTripleMaps.emplace_back(*curTripleMap);
+            curTripleMap = nullptr;
+        }
+    }
 
 
 public:
@@ -101,72 +175,97 @@ public:
 
 
 //    subjectmap to sql(query)
-    class SelectQuery {
+    class SelectQuery
+    {
         std::string query;
     public:
-        SelectQuery() {}
+        SelectQuery()
+        {}
 
-        void addQuery(std::string &q) { query += q; }
+        void addQuery(std::string &q)
+        { query += q; }
 
-        std::string getQuery() { return query; }
+        std::string getQuery()
+        { return query; }
     };
 
 
-    class Template {
+    class Template
+    {
     private:
         std::string text;
         std::vector<std::string> fields;
         std::string nameSpace;
         TermType termType;
     public:
-        Template() {};
-
-        Template(std::string &text, TermType &termType, std::string &nameSpace);
+        Template(std::string t = "", std::string n = "", TermType tt = AUTO)
+        {
+            text = t;
+            nameSpace = n;
+            termType = tt;
+            createTemplateFields();
+        };
 
         void createTemplateFields();
 
-        std::vector<std::string> getFields() { return fields; }
+        std::vector<std::string> getFields()
+        { return fields; }
 
-        void setFields(const std::vector<std::string> &Fields) { this->fields = Fields; }
+        void setFields(const std::vector<std::string> &Fields)
+        { this->fields = Fields; }
 
-        TermType getTermType() { return termType; }
+        TermType getTermType()
+        { return termType; }
 
-        void setTermType(TermType termType1) { this->termType = termType1; }
+        void setTermType(TermType termType1)
+        { this->termType = termType1; }
 
-        std::string getNameSpace() { return nameSpace; }
+        std::string getNameSpace()
+        { return nameSpace; }
 
-        void setNameSpace(std::string &ns) { this->nameSpace = ns; }
+        void setNameSpace(std::string &ns)
+        { this->nameSpace = ns; }
 
-        std::string getText() { return text; }
+        std::string getText()
+        { return text; }
 
-        void setText(std::string &t) { text = t; }
+        void setText(std::string &t)
+        { text = t; }
 
         void replaceText(std::vector<std::string> &replace);
     };
 
-    class SubjectMap {
+    class SubjectMap
+    {
     private:
         Template tem;
         std::string pre, obj;
 
     public:
-        SubjectMap() {};
+        SubjectMap()
+        {};
 
-        void setTemplate(Template &t) {
+        void setTemplate(Template &t)
+        {
             tem = t;
         };
 
-        Template getTemplate() {
+        Template getTemplate()
+        {
             return tem;
         };
 
-        void setPredicate(std::string &p) { pre = p; }
+        void setPredicate(std::string &p)
+        { pre = p; }
 
-        std::string getPredicate() { return pre; }
+        std::string getPredicate()
+        { return pre; }
 
-        void setObject(std::string &o) { obj = o; }
+        void setObject(std::string &o)
+        { obj = o; }
 
-        std::string getObject() { return obj; }
+        std::string getObject()
+        { return obj; }
 
 //        SelectQuery getSelectQuery() {
 //            return selectQuery;
@@ -183,59 +282,94 @@ public:
         std::vector<std::string> getColumns();
     };
 
-    class PredicateMap {
-    protected:
-        std::string property;
-        std::string text;
-    public:
-        PredicateMap() {};
-
-        std::string getProperty() { return property; }
-
-        std::string getText() { return text; }
-
-        void setProperty(std::string &p) { property = p; }
-
-        void setText(std::string &t) { text = t; }
-    };
-
-    class Predicate : public PredicateMap {
-    public:
-        Predicate() {};
-    };
-
-    class ObjectMap {
+    class PredicateMap
+    {
     protected:
         std::string property;
         std::string text;
         std::vector<std::string> column;
         Template tmp;
     public:
-        ObjectMap() {};
+        PredicateMap()
+        {};
 
-        std::string getProperty() { return property; }
+        std::string getProperty()
+        { return property; }
 
-        std::string getText() { return text; }
+        std::string getText()
+        { return text; }
 
-        std::vector<std::string> getColumn() { return column; }
+        std::vector<std::string> getColumn()
+        { return column; }
 
-        Template getTemplate() { return tmp; }
+        Template getTemplate()
+        { return tmp; }
 
-        void setProperty(std::string &p) { property = p; }
+        void setProperty(std::string &p)
+        { property = p; }
 
-        void setText(std::string &t) { text = t; }
+        void setText(std::string &t)
+        { text = t; }
 
-        void addColumn(std::string &val) { column.emplace_back(val); }
+        void addColumn(std::string &val)
+        { column.emplace_back(val); }
 
-        void setTemplate(Template &t) { tmp = t; }
+        void setTemplate(Template &t)
+        { tmp = t; }
     };
 
-    class Object : public ObjectMap {
+    class Predicate : public PredicateMap
+    {
     public:
-        Object() {};
+        Predicate()
+        {};
     };
 
-    class PredicateObjectMap {
+    class ObjectMap
+    {
+    protected:
+        std::string property;
+        std::string text;
+        std::vector<std::string> column;
+        Template tmp;
+    public:
+        ObjectMap()
+        {};
+
+        std::string getProperty()
+        { return property; }
+
+        std::string getText()
+        { return text; }
+
+        std::vector<std::string> getColumn()
+        { return column; }
+
+        Template getTemplate()
+        { return tmp; }
+
+        void setProperty(std::string &p)
+        { property = p; }
+
+        void setText(std::string &t)
+        { text = t; }
+
+        void addColumn(std::string &val)
+        { column.emplace_back(val); }
+
+        void setTemplate(Template &t)
+        { tmp = t; }
+    };
+
+    class Object : public ObjectMap
+    {
+    public:
+        Object()
+        {};
+    };
+
+    class PredicateObjectMap
+    {
     private:
         PredicateMap preMap;
         Predicate pre;
@@ -243,111 +377,148 @@ public:
         Object obj;
         bool preShortcut = false, objShortcut = false;
     public:
-        PredicateObjectMap() {};
+        PredicateObjectMap()
+        {};
 
-        PredicateMap getPredicateMap() { return preMap; }
+        PredicateMap getPredicateMap()
+        { return preMap; }
 
-        Predicate getPredicate() { return pre; }
+        Predicate getPredicate()
+        { return pre; }
 
-        ObjectMap getObjectMap() { return objMap; }
+        ObjectMap getObjectMap()
+        { return objMap; }
 
-        Object getObj() { return obj; }
+        Object getObj()
+        { return obj; }
 
-        bool usePreShortCut() const { return preShortcut; }
+        bool usePreShortCut() const
+        { return preShortcut; }
 
-        bool useObjShortCut() const { return objShortcut; }
+        bool useObjShortCut() const
+        { return objShortcut; }
 
-        void setPredicateMap(PredicateMap &pm) { preMap = pm; }
+        void setPredicateMap(PredicateMap &pm)
+        { preMap = pm; }
 
-        void setPredicate(Predicate &p) { pre = p; }
+        void setPredicate(Predicate &p)
+        { pre = p; }
 
-        void setObjectMap(ObjectMap &om) { objMap = om; }
+        void setObjectMap(ObjectMap &om)
+        { objMap = om; }
 
-        void setObject(Object &o) { obj = o; }
+        void setObject(Object &o)
+        { obj = o; }
 
-        void setPreShortCut() { preShortcut = true; }
+        void setPreShortCut()
+        { preShortcut = true; }
 
-        void setObjShortCut() { objShortcut = true; }
+        void setObjShortCut()
+        { objShortcut = true; }
     };
 
-    class LogicalTableView {
+    class LogicalTableView
+    {
         std::string viewName;
         SelectQuery selectQuery;
     public:
-        LogicalTableView() {};
+        LogicalTableView()
+        {};
 
-        std::string getViewName() {
+        std::string getViewName()
+        {
             return viewName;
         }
 
-        void setViewName(std::string &query) {
+        void setViewName(std::string &query)
+        {
             viewName = query;
         }
 
-        SelectQuery getSelectQuery() {
+        SelectQuery getSelectQuery()
+        {
             return selectQuery;
         }
 
-        void setSelectQuery(SelectQuery sq) {
+        void setSelectQuery(SelectQuery sq)
+        {
             selectQuery = sq;
         }
     };
 
-    class LogicalTable {
+    class LogicalTable
+    {
         LogicalTableView logicalTableView;
         std::string NameSpace;
         Template logicalTableTmp;
     public:
-        LogicalTable() {};
+        LogicalTable()
+        {};
 
-        LogicalTableView getLogicalTableView() {
+        LogicalTableView getLogicalTableView()
+        {
             return logicalTableView;
         }
 
-        void setLogicalTableView(const LogicalTableView &ltv) {
+        void setLogicalTableView(const LogicalTableView &ltv)
+        {
             logicalTableView = ltv;
         }
 
-        Template &getTemplate() {
+        Template &getTemplate()
+        {
             return logicalTableTmp;
         }
 
-        void setTemplate(Template &ltt) {
+        void setTemplate(Template &ltt)
+        {
             logicalTableTmp = ltt;
         }
 
-        std::string getNameSpace() { return NameSpace; }
+        std::string getNameSpace()
+        { return NameSpace; }
 
-        void setNameSpace(std::string &ns) { NameSpace = ns; }
+        void setNameSpace(std::string &ns)
+        { NameSpace = ns; }
 
     };
 
-    class TripleMap {
+    class TripleMap
+    {
         std::string name;
         LogicalTable logicalTable;
         SubjectMap subjectMap;
         std::vector<PredicateObjectMap> predicateObjectMaps;
     public:
-        TripleMap() {};
+        TripleMap()
+        {};
 
-        void setName(std::string &n) { name = n; }
+        void setName(std::string &n)
+        { name = n; }
 
-        void setLogicalTable(LogicalTable &lt) { logicalTable = lt; }
+        void setLogicalTable(LogicalTable &lt)
+        { logicalTable = lt; }
 
-        void setSubjectMap(SubjectMap &sm) { subjectMap = sm; }
+        void setSubjectMap(SubjectMap &sm)
+        { subjectMap = sm; }
 
-        void addPredicateObjectMap(PredicateObjectMap &pom) { predicateObjectMaps.emplace_back(pom); }
+        void addPredicateObjectMap(PredicateObjectMap &pom)
+        { predicateObjectMaps.emplace_back(pom); }
 
-        std::string getName() { return name; }
+        std::string getName()
+        { return name; }
 
-        LogicalTable &getLogicalTable() { return logicalTable; }
+        LogicalTable &getLogicalTable()
+        { return logicalTable; }
 
-        SubjectMap getSubjectMap() { return subjectMap; }
+        SubjectMap getSubjectMap()
+        { return subjectMap; }
 
-        std::vector<PredicateObjectMap> getPredicateObjectMap() { return predicateObjectMaps; }
+        std::vector<PredicateObjectMap> getPredicateObjectMap()
+        { return predicateObjectMaps; }
     };
 
-//    TripleMap *curTripleMap = nullptr;
+//    TriplesMap *curTripleMap = nullptr;
 //    SubjectMap *curSubjectMap = nullptr;
 //    LogicalTable *curLogicalTable = nullptr;
 //    Template *curTemplate = nullptr;

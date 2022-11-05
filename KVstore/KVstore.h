@@ -41,7 +41,7 @@ public:
     size_t getTripleBySubPreObj(std::vector<Triple> &result, const std::string &subject, const std::string &predicate,
                                 const std::string &object);
 
-    size_t getTripleListBySubPre(std::vector<Triple> &result, const std::string &subject, const std::string &predicate);
+    size_t getTripleBySubPre(std::vector<Triple> &result, const std::string &subject, const std::string &predicate);
 
     size_t getTripleBySubObj(std::vector<Triple> &result, const std::string &subject, const std::string &object);
 
