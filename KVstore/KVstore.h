@@ -5,6 +5,7 @@
 #pragma once
 
 #include "../util/Utility.h"
+#include "../util/Triple.h"
 
 typedef size_t SubjectID;
 typedef size_t PredicateID;

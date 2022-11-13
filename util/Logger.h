@@ -5,10 +5,13 @@
 #pragma once
 
 #include "Utility.h"
+#include "Triple.h"
+
 
 class Logger
 {
 public:
+
     template<typename T>
     void log(T var);
 
@@ -29,7 +32,16 @@ public:
 
     template<typename T1, typename T2>
     void log(std::pair<T1, T2> var);
+
+    void log(std::vector<Triple> &var);
 };
+
+void Logger::log(std::vector<Triple> &var)
+{
+    for (auto &item: var)
+        std::cout << item.to_string() << std::endl;
+
+}
 
 template<typename T1, typename T2>
 void Logger::log(std::vector<std::unordered_map<T1, T2>> var)
@@ -77,9 +89,6 @@ void Logger::log(std::pair<T1, T2> var)
 template<typename T1, typename T2>
 void Logger::log(std::unordered_map<T1, T2> var)
 {
-
     for (const auto &it: var)
         std::cout << it.first << ":" << it.second << "\n";
-
-
 }

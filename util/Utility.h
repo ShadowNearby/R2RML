@@ -4,8 +4,9 @@
 
 #pragma once
 
-#include <ctime>
+//#include <ctime>
 #include <fstream>
+#include <algorithm>
 #include <functional>
 #include <iostream>
 #include <istream>
@@ -19,8 +20,6 @@
 #include <deque>
 #include <queue>
 #include <utility>
-#include "PairHash.h"
-#include "Triple.h"
 #include <list>
 #include <tuple>
 #include <thread>
@@ -28,4 +27,7 @@
 #include <future>
 #include <chrono>
 #include <ctime>
-//#include "mysql.h"
+#include <stdexcept>
+#include <climits>
+#include "PairHash.h"
+#include <mysqlx/xdevapi.h>

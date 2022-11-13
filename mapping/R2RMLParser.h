@@ -10,17 +10,21 @@
 
 class R2RMLParser
 {
-    rrPrefix rr;
 public:
-    std::unordered_map<std::string, TriplesMap> triplesMaps;
-    std::unordered_map<std::string, RefObjectMap> refObjectMaps;
-    std::vector<Triple> result;
 
-    explicit R2RMLParser(std::vector<Triple> &input);
+    static std::unordered_map<std::string, TriplesMap> triplesMaps;
+    static std::unordered_map<std::string, RefObjectMap> refObjectMaps;
+    static std::unordered_map<std::string, ObjectMap> objectMaps;
 
-    explicit R2RMLParser(KVstore &store);
+    R2RMLParser()
+    = default;
 
-    R2RMLParser();
+    void parse(KVstore &store);
+
+    void parse(std::vector<Triple> &triples);
+
 };
+
+
 
 

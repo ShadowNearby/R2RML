@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <utility>
 
 #include "../util/Utility.h"
 #include "../util/Triple.h"
