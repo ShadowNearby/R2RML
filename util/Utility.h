@@ -29,5 +29,12 @@
 #include <ctime>
 #include <stdexcept>
 #include <climits>
+#include <atomic>
+#include <functional>
+#include <thread>
+#include <unordered_set>
+#include <cassert>
+#include <cmath>
+#include <folly/concurrency/ConcurrentHashMap.h>
 #include "PairHash.h"
 #include <mysqlx/xdevapi.h>

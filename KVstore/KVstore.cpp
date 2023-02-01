@@ -82,9 +82,11 @@ KVstore::insert(const std::vector<Triple> &triples)
 {
     auto start = std::chrono::steady_clock::now();
     size_t success = 0;
-    for (const auto &item: triples)
-        if (insert(item))
+#pragma omp parallel for
+    for (int i = 0; i < triples.size(); ++i)
+        if (insert(triples[i]))
             ++success;
+
     auto end = std::chrono::steady_clock::now();
     auto runTime = std::chrono::duration<double>(end - start).count();
     printf("Index established!\n"

@@ -15,6 +15,8 @@ std::unordered_map<std::string, ObjectMap> R2RMLParser::objectMaps = std::unorde
 
 void R2RMLParser::parse(KVstore &store)
 {
+    std::vector<Triple> res;
+    store.getAllTriples(res);
     std::vector<Triple> triplesFromStore;
     store.getTriplesByPreObj(triplesFromStore, rrPrefix::type_, rrPrefix::triplesMap_);
     for (const auto &item: triplesFromStore) {

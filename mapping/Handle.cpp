@@ -6,6 +6,7 @@
 std::string &removeQuot(std::string &str)
 {
     str.erase(std::remove(str.begin(), str.end(), '\"'), str.end());
+//    std::cout << str << std::endl;
     return str;
 }
 
@@ -13,19 +14,24 @@ Handle::Handle(KVstore &store)
 {
 
     parser.parse(store);
-    for (auto &item: R2RMLParser::triplesMaps) {
+
+    auto item = R2RMLParser::triplesMaps.begin();
+#pragma omp parallel for
+    for (int i = 0; i < R2RMLParser::triplesMaps.size(); ++i, ++item) {
         std::vector<Triple> templateTripleList;
-        auto &tripleMap = item.second;
-        auto &key = item.first;
+        auto &tripleMap = item->second;
+        auto &key = item->first;
         std::string subject, predicate, object;
         std::string logicalTableName;
         std::string logicalTableSqlQuery;
+//        std::cout << key.c_str() << std::endl;
         if (!tripleMap.logicalTable.empty()) {
             if (!tripleMap.logicalTable.tableName.empty()) {
                 logicalTableName = tripleMap.logicalTable.tableName;
 //                    removeQuot(logicalTableName);
             }
         }
+//        std::cout << logicalTableName << std::endl;
         /// subjectMap
         subject = tripleMap.subjectMap.getSubject();
         if (!tripleMap.subjectMap.subjectClass.empty())
@@ -36,8 +42,8 @@ Handle::Handle(KVstore &store)
             object = predicateObjectMap.getObject();
             templateTripleList.emplace_back(Triple(subject, predicate, object));
         }
-        std::string sql = "SELECT * FROM " + removeQuot(tripleMap.logicalTable.tableName) + ";";
-        selectQuery.getRowsBySql(sql);
+//        std::string sql = "SELECT * FROM " + removeQuot(tripleMap.logicalTable.tableName) + ";";
+        selectQuery.getRows(removeQuot(tripleMap.logicalTable.tableName));
         for (const auto &triple: templateTripleList) {
             std::unordered_map<std::string, std::vector<mysqlx::Value>> storedTemplate;
             std::string sub = triple.getSubject();
@@ -77,6 +83,7 @@ std::string Handle::toStdString(mysqlx::Value &value)
         case mysqlx::Value::ARRAY:
             return value.operator std::string();
     }
+    return {};
 }
 
 void Handle::addValueType(std::string &src, mysqlx::Value &value)
@@ -120,25 +127,27 @@ void Handle::replaceTemplate(std::string &sub, std::string &pre, std::string &ob
         std::string subject = sub, predicate = pre, object = obj;
         int preLength = 0;
         for (auto &pairPos: subPairPos) {
-            auto key = subject.substr(pairPos.first + preLength + 2, pairPos.second - pairPos.first - 3);
+            auto key = subject.substr(pairPos.first + preLength + 1, pairPos.second - pairPos.first - 1);
+//            std::cout << key << std::endl;
             subject = subject.replace(pairPos.first + preLength, pairPos.second - pairPos.first + 1,
                                       toStdString(row[key]));
-            preLength += (int) toStdString(row[key]).size() - (int) key.length() - 4;
+//            std::cout << row[key] << std::endl;
+            preLength += (int) toStdString(row[key]).size() - (int) key.length() - 2;
         }
         preLength = 0;
         for (auto &pairPos: prePairPos) {
-            auto key = predicate.substr(pairPos.first + preLength + 2, pairPos.second - pairPos.first - 3);
+            auto key = predicate.substr(pairPos.first + preLength + 1, pairPos.second - pairPos.first - 1);
             predicate = predicate.replace(pairPos.first + preLength, pairPos.second - pairPos.first + 1,
                                           toStdString(row[key]));
-            preLength += (int) toStdString(row[key]).size() - (int) key.length() - 4;
+            preLength += (int) toStdString(row[key]).size() - (int) key.length() - 2;
         }
 
         preLength = 0;
         for (auto &pairPos: objPairPos) {
-            auto key = object.substr(pairPos.first + preLength + 2, pairPos.second - pairPos.first - 3);
+            auto key = object.substr(pairPos.first + preLength + 1, pairPos.second - pairPos.first - 1);
             object = object.replace(pairPos.first + preLength, pairPos.second - pairPos.first + 1,
                                     toStdString(row[key]));
-            preLength += (int) toStdString(row[key]).size() - (int) key.length() - 4;
+            preLength += (int) toStdString(row[key]).size() - (int) key.length() - 2;
         }
         result.emplace_back(Triple(subject, predicate, object));
     }

@@ -19,6 +19,7 @@ std::string &PredicateObjectMap::getObject()
         } else if (!objObjectMap.empty()) {
             return objObjectMap.termMap.getValue();
         }
+        return objectMap.constant;
     } else if (!objectMap.termMap.empty())
         return objectMap.termMap.getValue();
     auto &parentTripleMap = objectMap.refObjectMap.parentTripleMap;
