@@ -38,7 +38,7 @@ namespace rrPrefix
     static const std::string ObjectMap_ = "<http://www.w3.org/ns/r2rml#ObjectMap>";
     static const std::string objectMap_ = "<http://www.w3.org/ns/r2rml#objectMap>";
 //    const std::string refObjectMap_ = "<http://www.w3.org/ns/r2rml#refObjectMap>";
-};
+}
 namespace xsdPrefix
 {
     static const std::string integer_ = "<http://www.w3.org/2001/XMLSchema#integer>";

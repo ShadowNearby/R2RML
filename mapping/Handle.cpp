@@ -16,11 +16,10 @@ Handle::Handle(KVstore &store)
     parser.parse(store);
 
     auto item = R2RMLParser::triplesMaps.begin();
-#pragma omp parallel for
     for (int i = 0; i < R2RMLParser::triplesMaps.size(); ++i, ++item) {
         std::vector<Triple> templateTripleList;
-        auto &tripleMap = item->second;
-        auto &key = item->first;
+        auto tripleMap = item->second;
+        auto key = item->first;
         std::string subject, predicate, object;
         std::string logicalTableName;
         std::string logicalTableSqlQuery;
@@ -35,17 +34,17 @@ Handle::Handle(KVstore &store)
         /// subjectMap
         subject = tripleMap.subjectMap.getSubject();
         if (!tripleMap.subjectMap.subjectClass.empty())
-            templateTripleList.emplace_back(Triple(subject, rrPrefix::type_, tripleMap.subjectMap.subjectClass));
+            templateTripleList.emplace_back(subject, rrPrefix::type_, tripleMap.subjectMap.subjectClass);
         /// predicateObjectMap
         for (auto predicateObjectMap: tripleMap.predicateObjectMaps) {
             predicate = predicateObjectMap.getPredicate();
             object = predicateObjectMap.getObject();
-            templateTripleList.emplace_back(Triple(subject, predicate, object));
+            templateTripleList.emplace_back(subject, predicate, object);
         }
 //        std::string sql = "SELECT * FROM " + removeQuot(tripleMap.logicalTable.tableName) + ";";
         selectQuery.getRows(removeQuot(tripleMap.logicalTable.tableName));
         for (const auto &triple: templateTripleList) {
-            std::unordered_map<std::string, std::vector<mysqlx::Value>> storedTemplate;
+            folly::ConcurrentHashMap<std::string, std::vector<mysqlx::Value>> storedTemplate;
             std::string sub = triple.getSubject();
             std::string pre = triple.getPredicate();
             std::string obj = triple.getObject();
@@ -91,8 +90,8 @@ void Handle::addValueType(std::string &src, mysqlx::Value &value)
 
 }
 
-void Handle::findBrace(std::unordered_map<std::string, std::vector<mysqlx::Value>> &temMap, std::string src,
-                       std::vector<std::unordered_map<std::string, mysqlx::Value>> &queryRes,
+void Handle::findBrace(folly::ConcurrentHashMap<std::string, std::vector<mysqlx::Value>> &temMap, std::string src,
+                       std::vector<folly::ConcurrentHashMap<std::string, mysqlx::Value> *> &queryRes,
                        std::vector<std::pair<size_t, size_t>> &pairPos)
 {
     size_t preLength = 0;
@@ -101,14 +100,14 @@ void Handle::findBrace(std::unordered_map<std::string, std::vector<mysqlx::Value
         auto posRight = src.find('}');
         if (posRight == std::string::npos || posLeft == std::string::npos)
             return;
-        pairPos.emplace_back(std::make_pair(posLeft + preLength, posRight + preLength));
+        pairPos.emplace_back(posLeft + preLength, posRight + preLength);
         auto columnName = src.substr(posLeft + 2, posRight - posLeft - 3);
         if (temMap[columnName].empty()) {
             auto valueList = std::vector<mysqlx::Value>();
             for (auto &row: queryRes) {
-                valueList.emplace_back(row[columnName]);
+                valueList.emplace_back((*row)[columnName]);
             }
-            temMap[columnName] = valueList;
+            temMap.insert_or_assign(columnName, valueList);
         }
         src = src.substr(posRight + 1, std::string::npos);
         preLength += posRight + 1;
@@ -117,38 +116,44 @@ void Handle::findBrace(std::unordered_map<std::string, std::vector<mysqlx::Value
 }
 
 void Handle::replaceTemplate(std::string &sub, std::string &pre, std::string &obj,
-                             std::vector<std::unordered_map<std::string, mysqlx::Value>> &queryRes,
+                             std::vector<folly::ConcurrentHashMap<std::string, mysqlx::Value> *> &queryRes,
                              std::vector<std::pair<size_t, size_t>> &subPairPos,
                              std::vector<std::pair<size_t, size_t>> &prePairPos,
                              std::vector<std::pair<size_t, size_t>> &objPairPos)
 {
-
-    for (auto &row: queryRes) {
+    auto it = queryRes.begin();
+#pragma omp parallel for
+    for (int i = 0; i < queryRes.size(); ++i, ++it) {
+        auto &row = *it;
         std::string subject = sub, predicate = pre, object = obj;
         int preLength = 0;
+
         for (auto &pairPos: subPairPos) {
             auto key = subject.substr(pairPos.first + preLength + 1, pairPos.second - pairPos.first - 1);
+            auto tokey = (*row)[key];
 //            std::cout << key << std::endl;
             subject = subject.replace(pairPos.first + preLength, pairPos.second - pairPos.first + 1,
-                                      toStdString(row[key]));
+                                      toStdString(tokey));
 //            std::cout << row[key] << std::endl;
-            preLength += (int) toStdString(row[key]).size() - (int) key.length() - 2;
+            preLength += (int) toStdString(tokey).size() - (int) key.length() - 2;
         }
         preLength = 0;
         for (auto &pairPos: prePairPos) {
             auto key = predicate.substr(pairPos.first + preLength + 1, pairPos.second - pairPos.first - 1);
+            auto tokey = (*row)[key];
             predicate = predicate.replace(pairPos.first + preLength, pairPos.second - pairPos.first + 1,
-                                          toStdString(row[key]));
-            preLength += (int) toStdString(row[key]).size() - (int) key.length() - 2;
+                                          toStdString(tokey));
+            preLength += (int) toStdString(tokey).size() - (int) key.length() - 2;
         }
 
         preLength = 0;
         for (auto &pairPos: objPairPos) {
             auto key = object.substr(pairPos.first + preLength + 1, pairPos.second - pairPos.first - 1);
+            auto tokey = (*row)[key];
             object = object.replace(pairPos.first + preLength, pairPos.second - pairPos.first + 1,
-                                    toStdString(row[key]));
-            preLength += (int) toStdString(row[key]).size() - (int) key.length() - 2;
+                                    toStdString(tokey));
+            preLength += (int) toStdString(tokey).size() - (int) key.length() - 2;
         }
-        result.emplace_back(Triple(subject, predicate, object));
+        result.emplace_back(subject, predicate, object);
     }
 }

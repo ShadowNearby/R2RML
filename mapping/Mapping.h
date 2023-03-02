@@ -539,9 +539,9 @@ public:
     std::shared_ptr<LogicalTableView> curLogicalTableView;
 
 
-    std::unordered_map<std::string, std::string> prefixes;
+    folly::ConcurrentHashMap<std::string, std::string> prefixes;
     std::vector<TripleMap> allTripleMaps;
-    std::unordered_map<std::string, size_t> TripleMapsIndex;
+    folly::ConcurrentHashMap<std::string, size_t> TripleMapsIndex;
 
     void masterParser();
 };

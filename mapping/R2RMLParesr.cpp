@@ -9,9 +9,9 @@ bool blankNode(const std::string &node)
 }
 
 
-std::unordered_map<std::string, TriplesMap> R2RMLParser::triplesMaps = std::unordered_map<std::string, TriplesMap>();
-std::unordered_map<std::string, RefObjectMap> R2RMLParser::refObjectMaps = std::unordered_map<std::string, RefObjectMap>();
-std::unordered_map<std::string, ObjectMap> R2RMLParser::objectMaps = std::unordered_map<std::string, ObjectMap>();
+folly::ConcurrentHashMap<std::string, TriplesMap> R2RMLParser::triplesMaps = folly::ConcurrentHashMap<std::string, TriplesMap>();
+folly::ConcurrentHashMap<std::string, RefObjectMap> R2RMLParser::refObjectMaps = folly::ConcurrentHashMap<std::string, RefObjectMap>();
+folly::ConcurrentHashMap<std::string, ObjectMap> R2RMLParser::objectMaps = folly::ConcurrentHashMap<std::string, ObjectMap>();
 
 void R2RMLParser::parse(KVstore &store)
 {
@@ -21,9 +21,10 @@ void R2RMLParser::parse(KVstore &store)
     store.getTriplesByPreObj(triplesFromStore, rrPrefix::type_, rrPrefix::triplesMap_);
     for (const auto &item: triplesFromStore) {
         auto tripleMapName = item.getSubject();
-        triplesMaps[tripleMapName] = TriplesMap();
+        triplesMaps.insert_or_assign(tripleMapName, TriplesMap());
     }
-    for (auto &triplesMap: triplesMaps) {
+    for (auto triplesMap: triplesMaps) {
+        auto key = triplesMap.first;
         ///     logicalTable
         store.getTriplesBySubPre(triplesFromStore, triplesMap.first, rrPrefix::logicalTable_);
         auto logicalTable = triplesFromStore.front().getObject();
@@ -102,6 +103,7 @@ void R2RMLParser::parse(KVstore &store)
                     triplesMap.second.subjectMap.graphMap.termMap.template_ = column;
                 }
             }
+            triplesMaps.assign(key, triplesMap.second);
         }
         ///     predicateObjectMaps
         store.getTriplesBySubPre(triplesFromStore, triplesMap.first, rrPrefix::predicateObjectMap_);
@@ -206,9 +208,10 @@ void R2RMLParser::parse(KVstore &store)
     store.getTriplesByPreObj(triplesFromStore, rrPrefix::type_, rrPrefix::RefObjectMap_);
     for (auto &item: triplesFromStore) {
         auto refObjectMap = item.getSubject();
-        refObjectMaps[refObjectMap] = RefObjectMap();
+        refObjectMaps.insert_or_assign(refObjectMap, RefObjectMap());
     }
-    for (auto &refObjectMap: refObjectMaps) {
+    for (auto refObjectMap: refObjectMaps) {
+        auto key = refObjectMap.first;
         /// predicateObjectMap objectMap RefObjectMap parentTriplesMap
         store.getTriplesBySubPre(triplesFromStore, refObjectMap.first, rrPrefix::parentTriplesMap_);
         if (!triplesFromStore.empty()) {
@@ -228,10 +231,11 @@ void R2RMLParser::parse(KVstore &store)
             auto parent = triplesFromStore.front().getObject();
             refObjectMap.second.join.parent = parent;
         }
+        refObjectMaps.assign(key, refObjectMap.second);
     }
     store.getTriplesByPreObj(triplesFromStore, rrPrefix::type_, rrPrefix::ObjectMap_);
     for (auto &item: triplesFromStore) {
-        objectMaps[item.getSubject()] = ObjectMap();
+        objectMaps.insert_or_assign(item.getSubject(), ObjectMap());
     }
     for (auto &item: objectMaps) {
         auto key = item.first;

@@ -12,9 +12,9 @@ class R2RMLParser
 {
 public:
 
-    static std::unordered_map<std::string, TriplesMap> triplesMaps;
-    static std::unordered_map<std::string, RefObjectMap> refObjectMaps;
-    static std::unordered_map<std::string, ObjectMap> objectMaps;
+    static folly::ConcurrentHashMap<std::string, TriplesMap> triplesMaps;
+    static folly::ConcurrentHashMap<std::string, RefObjectMap> refObjectMaps;
+    static folly::ConcurrentHashMap<std::string, ObjectMap> objectMaps;
 
     R2RMLParser()
     = default;

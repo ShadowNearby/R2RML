@@ -15,59 +15,72 @@ KVstore::insert(const std::string &subject, const std::string &predicate, const 
     size_t subID = 0, preID = 0, objID = 0;
     if (!string2id[subject]) {
         subID = id;
-        string2id[subject] = id;
-        id2string[id] = subject;
+        string2id.insert_or_assign(subject, id);
+        id2string.insert_or_assign(id, subject);
         id++;
     } else
         subID = string2id[subject];
     if (!string2id[predicate]) {
         preID = id;
-        string2id[predicate] = id;
-        id2string[id] = predicate;
+        string2id.insert_or_assign(predicate, id);
+        id2string.insert_or_assign(id, predicate);
         id++;
     } else
         preID = string2id[predicate];
     if (!string2id[object]) {
         objID = id;
-        string2id[object] = id;
-        id2string[id] = object;
+        string2id.insert_or_assign(object, id);
+        id2string.insert_or_assign(id, object);
         id++;
     } else
         objID = string2id[object];
-    auto &subIDList = preidobjid2subidList[std::make_pair(preID, objID)];
-    auto &preIDList = subidobjid2preidList[std::make_pair(subID, objID)];
-    auto &objIDList = subidpreid2objidList[std::make_pair(subID, preID)];
-//    if (!subIDList.empty() && !preIDList.empty() && !objIDList.empty())
-//        return false;
-    auto &preIDobjIDList = subid2preidobjidList[subID];
-    auto &subIDobjIDList = preid2subidobjidList[preID];
-    auto &subIDpreIDList = objid2subidpreidList[objID];
+    auto subIDList = preidobjid2subidList[std::make_pair(preID, objID)];
+    auto preIDList = subidobjid2preidList[std::make_pair(subID, objID)];
+    auto objIDList = subidpreid2objidList[std::make_pair(subID, preID)];
+    auto preIDobjIDList = subid2preidobjidList[subID];
+    auto subIDobjIDList = preid2subidobjidList[preID];
+    auto subIDpreIDList = objid2subidpreidList[objID];
     if (preIDobjIDList.empty())
-        subid2preidobjidList[subID] = std::vector<std::pair<size_t, size_t>>(1, std::make_pair(preID, objID));
-    else
-        preIDobjIDList.emplace_back(std::make_pair(preID, objID));
+        subid2preidobjidList.insert(subID, std::vector<std::pair<size_t,
+                size_t >>(1, std::make_pair(preID, objID)));
+    else {
+        preIDobjIDList.emplace_back(preID, objID);
+        subid2preidobjidList.assign(subID, preIDobjIDList);
+    }
     if (subIDobjIDList.empty())
-        preid2subidobjidList[preID] = std::vector<std::pair<size_t, size_t>>(1, std::make_pair(subID, objID));
-    else
-        subIDobjIDList.emplace_back(std::make_pair(subID, objID));
+        preid2subidobjidList.insert(preID, std::vector<std::pair<size_t,
+                size_t >>(1, std::make_pair(subID, objID)));
+    else {
+        subIDobjIDList.emplace_back(subID, objID);
+        preid2subidobjidList.assign(preID, subIDobjIDList);
+    }
     if (subIDpreIDList.empty())
-        objid2subidpreidList[objID] = std::vector<std::pair<size_t, size_t>>(1, std::make_pair(subID, preID));
-    else
-        subIDpreIDList.emplace_back(std::make_pair(subID, preID));
+        objid2subidpreidList.insert(objID, std::vector<std::pair<size_t,
+                size_t >>(1, std::make_pair(subID, preID)));
+    else {
+        subIDpreIDList.emplace_back(subID, preID);
+        objid2subidpreidList.assign(objID, subIDpreIDList);
+    }
     if (subIDList.empty())
-        preidobjid2subidList[std::make_pair(preID, objID)] = std::vector<size_t>(1, subID);
-    else
+        preidobjid2subidList.insert(std::make_pair(preID, objID), std::vector<size_t>(1, subID));
+    else {
         subIDList.emplace_back(subID);
+        preidobjid2subidList.assign(std::make_pair(preID, objID), subIDList);
+    }
     if (preIDList.empty()) {
-        subidobjid2preidList[std::make_pair(subID, objID)] = std::vector<size_t>(1, preID);
-    } else
+        subidobjid2preidList.insert(std::make_pair(subID, objID), std::vector<size_t>(1, preID));
+    } else {
         preIDList.emplace_back(preID);
+        subidobjid2preidList.assign(std::make_pair(subID, objID), preIDList);
+    }
     if (objIDList.empty())
-        subidpreid2objidList[std::make_pair(subID, preID)] = std::vector<size_t>(1, objID);
-    else
+        subidpreid2objidList.insert(std::make_pair(subID, preID), std::vector<size_t>(1, objID));
+    else {
         objIDList.emplace_back(objID);
+        subidpreid2objidList.assign(std::make_pair(subID, preID), objIDList);
+    }
     count++;
-    triple2id[std::make_tuple(subID, preID, objID)] = count;
+    triple2id.insert_or_assign(std::make_tuple(subID, preID, objID), count);
     return true;
 }
 
@@ -105,7 +118,7 @@ KVstore::getTriplesBySubPreObj(std::vector<Triple> &result, const std::string &s
     auto objID = string2id[object];
     auto tupleID = triple2id[std::make_tuple(subID, preID, objID)];
     if (tupleID != 0) {
-        result.emplace_back(Triple(subject, predicate, object));
+        result.emplace_back(subject, predicate, object);
         return 1;
     }
     return 0;
@@ -120,7 +133,7 @@ KVstore::getTriplesBySubPre(std::vector<Triple> &result, const std::string &subj
     auto &objIDList = subidpreid2objidList[std::make_pair(subID, preID)];
     for (const auto &item: objIDList) {
         auto object = id2string[item];
-        result.emplace_back(Triple(subject, predicate, object));
+        result.emplace_back(subject, predicate, object);
     }
     return objIDList.size();
 }
@@ -134,7 +147,7 @@ KVstore::getTriplesBySubObj(std::vector<Triple> &result, const std::string &subj
     auto &preIDList = subidobjid2preidList[std::make_pair(subID, objID)];
     for (const auto &item: preIDList) {
         auto predicate = id2string[item];
-        result.emplace_back(Triple(subject, predicate, object));
+        result.emplace_back(subject, predicate, object);
     }
     return preIDList.size();
 
@@ -149,7 +162,7 @@ KVstore::getTriplesByPreObj(std::vector<Triple> &result, const std::string &pred
     auto &subIDList = preidobjid2subidList[std::make_pair(preID, objID)];
     for (const auto &item: subIDList) {
         auto subject = id2string[item];
-        result.emplace_back(Triple(subject, predicate, object));
+        result.emplace_back(subject, predicate, object);
     }
     return subIDList.size();
 }
@@ -163,7 +176,7 @@ KVstore::getTriplesBySub(std::vector<Triple> &result, const std::string &subject
     for (const auto &item: preIDobjIDList) {
         auto predicate = id2string[item.first];
         auto object = id2string[item.second];
-        result.emplace_back(Triple(subject, predicate, object));
+        result.emplace_back(subject, predicate, object);
     }
     return preIDobjIDList.size();
 }
@@ -177,7 +190,7 @@ KVstore::getTriplesByPre(std::vector<Triple> &result, const std::string &predica
     for (const auto &item: subIDobjIDList) {
         auto subject = id2string[item.first];
         auto object = id2string[item.second];
-        result.emplace_back(Triple(subject, predicate, object));
+        result.emplace_back(subject, predicate, object);
     }
     return subIDobjIDList.size();
 }
@@ -192,7 +205,7 @@ KVstore::getTriplesByObj(std::vector<Triple> &result, const std::string &object)
     for (const auto &item: subIDpreIDList) {
         auto subject = id2string[item.first];
         auto predicate = id2string[item.second];
-        result.emplace_back(Triple(subject, predicate, object));
+        result.emplace_back(subject, predicate, object);
     }
     return subIDpreIDList.size();
 }
@@ -210,7 +223,7 @@ KVstore::getAllTriples(std::vector<Triple> &result)
         for (const auto &subIDobjId: subIDobjIDList) {
             auto subject = id2string[subIDobjId.first];
             auto object = id2string[subIDobjId.second];
-            result.emplace_back(Triple(subject, predicate, object));
+            result.emplace_back(subject, predicate, object);
         }
     }
     return sum;
@@ -309,64 +322,60 @@ bool KVstore::update(const Triple &triple, const std::string &subject, const std
 }
 
 //TODO
-void KVstore::merge(const KVstore &store)
-{
-    for (const auto &item: store.subidpreid2objidList) {
-        auto &finalList = this->subidpreid2objidList[item.first];
-        if (finalList.empty())
-            finalList = item.second;
-        else {
-            finalList.insert(finalList.end(), item.second.begin(), item.second.end());
+//void KVstore::merge(const KVstore &store)
+//{
+//    for (const auto &item: store.subidpreid2objidList) {
+//        auto &finalList = this->subidpreid2objidList[item.first];
+//        if (finalList.empty())
+//            finalList = item.second;
+//        else {
+//            finalList.insert(finalList.end(), item.second.begin(), item.second.end());
 //            finalList.unique();
-        }
-    }
-    for (const auto &item: store.subidobjid2preidList) {
-        auto &finalList = this->subidobjid2preidList[item.first];
-        if (finalList.empty())
-            finalList = item.second;
-        else {
-            finalList.insert(finalList.end(), item.second.begin(), item.second.end());
+//        }
+//    }
+//    for (const auto &item: store.subidobjid2preidList) {
+//        auto &finalList = this->subidobjid2preidList[item.first];
+//        if (finalList.empty())
+//            finalList = item.second;
+//        else {
+//            finalList.insert(finalList.end(), item.second.begin(), item.second.end());
 //            finalList.unique();
-        }
-    }
-    for (const auto &item: store.preidobjid2subidList) {
-        auto &finalList = this->preidobjid2subidList[item.first];
-        if (finalList.empty())
-            finalList = item.second;
-        else {
-            finalList.insert(finalList.end(), item.second.begin(), item.second.end());
+//        }
+//    }
+//    for (const auto &item: store.preidobjid2subidList) {
+//        auto &finalList = this->preidobjid2subidList[item.first];
+//        if (finalList.empty())
+//            finalList = item.second;
+//        else {
+//            finalList.insert(finalList.end(), item.second.begin(), item.second.end());
 //            finalList.unique();
-        }
-    }
-    for (const auto &item: store.subid2preidobjidList) {
-        auto &finalList = this->subid2preidobjidList[item.first];
-        if (finalList.empty())
-            finalList = item.second;
-        else {
-            finalList.insert(finalList.end(), item.second.begin(), item.second.end());
+//        }
+//    }
+//    for (const auto &item: store.subid2preidobjidList) {
+//        auto &finalList = this->subid2preidobjidList[item.first];
+//        if (finalList.empty())
+//            finalList = item.second;
+//        else {
+//            finalList.insert(finalList.end(), item.second.begin(), item.second.end());
 //            finalList.unique();
-        }
-    }
-    for (const auto &item: store.preid2subidobjidList) {
-        auto &finalList = this->preid2subidobjidList[item.first];
-        if (finalList.empty())
-            finalList = item.second;
-        else {
-            finalList.insert(finalList.end(), item.second.begin(), item.second.end());
+//        }
+//    }
+//    for (const auto &item: store.preid2subidobjidList) {
+//        auto &finalList = this->preid2subidobjidList[item.first];
+//        if (finalList.empty())
+//            finalList = item.second;
+//        else {
+//            finalList.insert(finalList.end(), item.second.begin(), item.second.end());
 //            finalList.unique();
-        }
-    }
-    for (const auto &item: store.objid2subidpreidList) {
-        auto &finalList = this->objid2subidpreidList[item.first];
-        if (finalList.empty())
-            finalList = item.second;
-        else {
-            finalList.insert(finalList.end(), item.second.begin(), item.second.end());
+//        }
+//    }
+//    for (const auto &item: store.objid2subidpreidList) {
+//        auto &finalList = this->objid2subidpreidList[item.first];
+//        if (finalList.empty())
+//            finalList = item.second;
+//        else {
+//            finalList.insert(finalList.end(), item.second.begin(), item.second.end());
 //            finalList.unique();
-        }
-    }
-}
-
-
-
-
+//        }
+//    }
+//}

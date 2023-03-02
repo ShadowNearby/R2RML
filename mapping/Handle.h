@@ -25,13 +25,13 @@ public:
 
 
     void replaceTemplate(std::string &sub, std::string &pre, std::string &obj,
-                         std::vector<std::unordered_map<std::string, mysqlx::Value>> &queryRes,
+                         std::vector<folly::ConcurrentHashMap<std::string, mysqlx::Value> *> &queryRes,
                          std::vector<std::pair<size_t, size_t>> &subPairPos,
                          std::vector<std::pair<size_t, size_t>> &prePairPos,
                          std::vector<std::pair<size_t, size_t>> &objPairPos);
 
-    void findBrace(std::unordered_map<std::string, std::vector<mysqlx::Value>> &temMap, std::string src,
-                   std::vector<std::unordered_map<std::string, mysqlx::Value>> &queryRes,
+    void findBrace(folly::ConcurrentHashMap<std::string, std::vector<mysqlx::Value>> &temMap, std::string src,
+                   std::vector<folly::ConcurrentHashMap<std::string, mysqlx::Value> *> &queryRes,
                    std::vector<std::pair<size_t, size_t>> &pairPos);
 
     void addValueType(std::string &src, mysqlx::Value &value);

@@ -46,7 +46,7 @@ public:
 //    std::vector<SelectField> fields;
     mysqlx::Session session;
     mysqlx::Schema db;
-    std::vector<std::unordered_map<std::string, mysqlx::Value>> result;
+    std::vector<folly::ConcurrentHashMap<std::string, mysqlx::Value> *> result;
 
     SelectQuery();
 

@@ -58,13 +58,13 @@ public:
 
 
     size_t id;
-    std::unordered_map<size_t, std::string> id2string;
-    std::unordered_map<std::string, size_t> string2id;
-    std::unordered_map<std::pair<size_t, size_t>, std::vector<size_t>, pair_hash> subidpreid2objidList;
-    std::unordered_map<std::pair<size_t, size_t>, std::vector<size_t>, pair_hash> subidobjid2preidList;
-    std::unordered_map<std::pair<size_t, size_t>, std::vector<size_t>, pair_hash> preidobjid2subidList;
-    std::unordered_map<size_t, std::vector<std::pair<size_t, size_t>>> subid2preidobjidList;
-    std::unordered_map<size_t, std::vector<std::pair<size_t, size_t>>> preid2subidobjidList;
-    std::unordered_map<size_t, std::vector<std::pair<size_t, size_t>>> objid2subidpreidList;
-    std::unordered_map<std::tuple<size_t, size_t, size_t>, size_t, tuple_hash> triple2id;
+    folly::ConcurrentHashMap<size_t, std::string> id2string;
+    folly::ConcurrentHashMap<std::string, size_t> string2id;
+    folly::ConcurrentHashMap<std::pair<size_t, size_t>, std::vector<size_t>, pair_hash> subidpreid2objidList;
+    folly::ConcurrentHashMap<std::pair<size_t, size_t>, std::vector<size_t>, pair_hash> subidobjid2preidList;
+    folly::ConcurrentHashMap<std::pair<size_t, size_t>, std::vector<size_t>, pair_hash> preidobjid2subidList;
+    folly::ConcurrentHashMap<size_t, std::vector<std::pair<size_t, size_t>>> subid2preidobjidList;
+    folly::ConcurrentHashMap<size_t, std::vector<std::pair<size_t, size_t>>> preid2subidobjidList;
+    folly::ConcurrentHashMap<size_t, std::vector<std::pair<size_t, size_t>>> objid2subidpreidList;
+    folly::ConcurrentHashMap<std::tuple<size_t, size_t, size_t>, size_t, tuple_hash> triple2id;
 };
