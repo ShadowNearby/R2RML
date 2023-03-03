@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "./Triple.h"
 
 template<typename T>
 inline void hash_combine(std::size_t &seed, const T &val)

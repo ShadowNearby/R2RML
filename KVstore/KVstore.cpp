@@ -15,72 +15,59 @@ KVstore::insert(const std::string &subject, const std::string &predicate, const 
     size_t subID = 0, preID = 0, objID = 0;
     if (!string2id[subject]) {
         subID = id;
-        string2id.insert_or_assign(subject, id);
-        id2string.insert_or_assign(id, subject);
+        string2id[subject] = id;
+        id2string[id] = subject;
         id++;
     } else
         subID = string2id[subject];
     if (!string2id[predicate]) {
         preID = id;
-        string2id.insert_or_assign(predicate, id);
-        id2string.insert_or_assign(id, predicate);
+        string2id[predicate] = id;
+        id2string[id] = predicate;
         id++;
     } else
         preID = string2id[predicate];
     if (!string2id[object]) {
         objID = id;
-        string2id.insert_or_assign(object, id);
-        id2string.insert_or_assign(id, object);
+        string2id[object] = id;
+        id2string[id] = object;
         id++;
     } else
         objID = string2id[object];
-    auto subIDList = preidobjid2subidList[std::make_pair(preID, objID)];
-    auto preIDList = subidobjid2preidList[std::make_pair(subID, objID)];
-    auto objIDList = subidpreid2objidList[std::make_pair(subID, preID)];
-    auto preIDobjIDList = subid2preidobjidList[subID];
-    auto subIDobjIDList = preid2subidobjidList[preID];
-    auto subIDpreIDList = objid2subidpreidList[objID];
+    auto &subIDList = preidobjid2subidList[std::make_pair(preID, objID)];
+    auto &preIDList = subidobjid2preidList[std::make_pair(subID, objID)];
+    auto &objIDList = subidpreid2objidList[std::make_pair(subID, preID)];
+//    if (!subIDList.empty() && !preIDList.empty() && !objIDList.empty())
+//        return false;
+    auto &preIDobjIDList = subid2preidobjidList[subID];
+    auto &subIDobjIDList = preid2subidobjidList[preID];
+    auto &subIDpreIDList = objid2subidpreidList[objID];
     if (preIDobjIDList.empty())
-        subid2preidobjidList.insert(subID, std::vector<std::pair<size_t,
-                size_t >>(1, std::make_pair(preID, objID)));
-    else {
-        preIDobjIDList.emplace_back(preID, objID);
-        subid2preidobjidList.assign(subID, preIDobjIDList);
-    }
+        subid2preidobjidList[subID] = std::vector<std::pair<size_t, size_t>>(1, std::make_pair(preID, objID));
+    else
+        preIDobjIDList.emplace_back(std::make_pair(preID, objID));
     if (subIDobjIDList.empty())
-        preid2subidobjidList.insert(preID, std::vector<std::pair<size_t,
-                size_t >>(1, std::make_pair(subID, objID)));
-    else {
-        subIDobjIDList.emplace_back(subID, objID);
-        preid2subidobjidList.assign(preID, subIDobjIDList);
-    }
+        preid2subidobjidList[preID] = std::vector<std::pair<size_t, size_t>>(1, std::make_pair(subID, objID));
+    else
+        subIDobjIDList.emplace_back(std::make_pair(subID, objID));
     if (subIDpreIDList.empty())
-        objid2subidpreidList.insert(objID, std::vector<std::pair<size_t,
-                size_t >>(1, std::make_pair(subID, preID)));
-    else {
-        subIDpreIDList.emplace_back(subID, preID);
-        objid2subidpreidList.assign(objID, subIDpreIDList);
-    }
+        objid2subidpreidList[objID] = std::vector<std::pair<size_t, size_t>>(1, std::make_pair(subID, preID));
+    else
+        subIDpreIDList.emplace_back(std::make_pair(subID, preID));
     if (subIDList.empty())
-        preidobjid2subidList.insert(std::make_pair(preID, objID), std::vector<size_t>(1, subID));
-    else {
+        preidobjid2subidList[std::make_pair(preID, objID)] = std::vector<size_t>(1, subID);
+    else
         subIDList.emplace_back(subID);
-        preidobjid2subidList.assign(std::make_pair(preID, objID), subIDList);
-    }
     if (preIDList.empty()) {
-        subidobjid2preidList.insert(std::make_pair(subID, objID), std::vector<size_t>(1, preID));
-    } else {
+        subidobjid2preidList[std::make_pair(subID, objID)] = std::vector<size_t>(1, preID);
+    } else
         preIDList.emplace_back(preID);
-        subidobjid2preidList.assign(std::make_pair(subID, objID), preIDList);
-    }
     if (objIDList.empty())
-        subidpreid2objidList.insert(std::make_pair(subID, preID), std::vector<size_t>(1, objID));
-    else {
+        subidpreid2objidList[std::make_pair(subID, preID)] = std::vector<size_t>(1, objID);
+    else
         objIDList.emplace_back(objID);
-        subidpreid2objidList.assign(std::make_pair(subID, preID), objIDList);
-    }
     count++;
-    triple2id.insert_or_assign(std::make_tuple(subID, preID, objID), count);
+    triple2id[std::make_tuple(subID, preID, objID)] = count;
     return true;
 }
 
@@ -95,7 +82,7 @@ KVstore::insert(const std::vector<Triple> &triples)
 {
     auto start = std::chrono::steady_clock::now();
     size_t success = 0;
-#pragma omp parallel for
+//#pragma omp parallel for
     for (int i = 0; i < triples.size(); ++i)
         if (insert(triples[i]))
             ++success;

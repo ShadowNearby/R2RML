@@ -5,7 +5,7 @@
 
 #include "R2RMLParser.h"
 #include "SelectQuery.h"
-
+#include "../util/PairHash.h"
 
 class MapTemplate
 {
@@ -14,11 +14,24 @@ class MapTemplate
 
 };
 
+namespace std
+{
+    template<>
+    struct hash<Triple>
+    {
+        std::size_t operator()(const Triple &t) const
+        {
+//            std::string s = t.getSubject() + t.getPredicate() + t.getObject();
+            return hash_val(t.getSubject(), t.getPredicate(), t.getObject());
+        }
+    };
+}
+
 class Handle
 {
 public:
     R2RMLParser parser;
-    std::vector<Triple> result;
+    folly::ConcurrentHashMap<Triple, char> result;
     SelectQuery selectQuery;
 
     Handle(KVstore &store);
@@ -33,8 +46,6 @@ public:
     void findBrace(folly::ConcurrentHashMap<std::string, std::vector<mysqlx::Value>> &temMap, std::string src,
                    std::vector<folly::ConcurrentHashMap<std::string, mysqlx::Value> *> &queryRes,
                    std::vector<std::pair<size_t, size_t>> &pairPos);
-
-    void addValueType(std::string &src, mysqlx::Value &value);
 
     std::string toStdString(mysqlx::Value &value);
 };

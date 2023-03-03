@@ -73,7 +73,7 @@ void SelectQuery::getRowsBySql(std::string &sql)
 //    std::cout << "yes" << std::endl;
     session.sql("USE gtfs-sql;").execute();
     auto table = db.getTable("stop_times");
-    std::cout << sql << std::endl;
+//    std::cout << sql << std::endl;
     auto sqlResult = session.sql(sql).execute();
     auto &columns = sqlResult.getColumns();
     std::cout << sqlResult.count() << std::endl;

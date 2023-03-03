@@ -49,4 +49,9 @@ public:
 
     std::string to_string();
 
+    bool operator==(const Triple &t) const
+    {
+        return subject_ == t.getSubject() && predicate_ == t.getPredicate() && object_ == t.getObject();
+    }
+
 };

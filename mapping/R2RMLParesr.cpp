@@ -19,6 +19,7 @@ void R2RMLParser::parse(KVstore &store)
     store.getAllTriples(res);
     std::vector<Triple> triplesFromStore;
     store.getTriplesByPreObj(triplesFromStore, rrPrefix::type_, rrPrefix::triplesMap_);
+//    std::cout << triplesFromStore.size() << std::endl;
     for (const auto &item: triplesFromStore) {
         auto tripleMapName = item.getSubject();
         triplesMaps.insert_or_assign(tripleMapName, TriplesMap());
