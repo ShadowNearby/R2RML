@@ -1,43 +1,58 @@
 //
 // Created by yanjs on 2022/10/3.
 //
-
-//#include "parser/RDFParser.h"
-//#include "KVstore/KVstore.h"
-//#include "parser/cmdLine.h"
-#include "mapping/Mapping.h"
+#include "mapping/R2RMLParser.h"
+#include "parser/RDFParser.h"
+#include "mapping/Handle.h"
+#include "mapping/SelectQuery.h"
+#include "KVstore/ConKVStore.h"
 #include "omp.h"
-#include "util/Logger.h"
-
 
 auto _100 = R"(..\tiny_example)";
 auto _100k = R"(..\example)";
 auto _10m = R"(D:\Download\Claros)";
 
-int main(int argc, char *argv[]) {
-//    auto con = new MYSQL();
-//    mysql_init(con);
-//    mysql_real_connect(con, "localhost", "yanjs", "yjs135790", "test", 3306, nullptr, 0);
-//    con->db;
-//    const char *query = "select * from student;";
-//    size_t length = 100;
-//    auto result = mysql_real_query(con, query, length);
-//    printf("%d\n", result);
-//    printf("%s\n", con->db);
-//    printf("aa\n");
-    Logger logger;
-    try {
 
-        Mapping m;
-        m.masterParser();
-        auto map = m.allTripleMaps;
-        for (auto &item: map) {
-            logger.log(item.getLogicalTable().getTemplate().getText());
-        }
-    } catch (std::exception &e) {
-        logger.log(e.what());
-    }
+int main(int argc, char *argv[])
+{
 
+//    Logger logger;
+    std::fstream f;
+//    f.open("../test/testin");
+    f.open("../input");
+    RDFParser parser(f);
+    std::vector<Triple> vec;
+    parser.parseFile(vec);
+    ConKVStore kvstore;
+    kvstore.insert(vec);
+    f.close();
+//    f.open("../output");
+//    for (auto &item: vec) {
+//        f << item.to_string().c_str() << "\n";
+//    }
+//    f.close();
+    auto start = std::chrono::steady_clock::now();
+//    omp_set_num_threads(4);
+    Handle handle(kvstore);
+    folly::ConcurrentHashMap<size_t, Triple> result;
+    handle.result.getAllTriples(result);
+    f.open("../output", std::ios::out);
+    for (const auto &item: result)
+        f << item.second.getSubject() << " " << item.second.getPredicate() << " "
+          << item.second.getObject()
+          << " ." << std::endl;
+    f.close();
+    auto end = std::chrono::steady_clock::now();
+    auto runTime = std::chrono::duration<double>(end - start).count();
+    printf("sum:%d %d runtime:%f\n", handle.result.triple2id.size(), handle.result.count, runTime);
+//    printf("RunTime: %fs\nCount:%zu\n", runTime, result.size());
+
+//    folly::ConcurrentHashMap<size_t, Triple> result;
+//    handle.result.getAllTriples(result);
+//    for (auto it = result.begin(); it != result.end(); ++it) {
+//        auto t = it->second;
+//        printf("%s %s %s\n", t.getSubject().c_str(), t.getPredicate().c_str(), t.getObject().c_str());
+//    }
     return 0;
 
 }

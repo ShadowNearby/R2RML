@@ -31,20 +31,20 @@ class Handle
 {
 public:
     R2RMLParser parser;
-    folly::ConcurrentHashMap<Triple, char> result;
+    ConKVStore result;
     SelectQuery selectQuery;
 
-    Handle(KVstore &store);
+    Handle(ConKVStore &store);
 
 
-    void replaceTemplate(std::string &sub, std::string &pre, std::string &obj,
-                         std::vector<folly::ConcurrentHashMap<std::string, mysqlx::Value> *> &queryRes,
-                         std::vector<std::pair<size_t, size_t>> &subPairPos,
-                         std::vector<std::pair<size_t, size_t>> &prePairPos,
-                         std::vector<std::pair<size_t, size_t>> &objPairPos);
+    void replaceTemplate(std::string sub, std::string pre, std::string obj,
+                         folly::ConcurrentHashMap<size_t, folly::ConcurrentHashMap<std::string, mysqlx::Value> *> &queryRes,
+                         const std::vector<std::pair<size_t, size_t>> &subPairPos,
+                         const std::vector<std::pair<size_t, size_t>> &prePairPos,
+                         const std::vector<std::pair<size_t, size_t>> &objPairPos, bool join);
 
     void findBrace(folly::ConcurrentHashMap<std::string, std::vector<mysqlx::Value>> &temMap, std::string src,
-                   std::vector<folly::ConcurrentHashMap<std::string, mysqlx::Value> *> &queryRes,
+                   const folly::ConcurrentHashMap<size_t, folly::ConcurrentHashMap<std::string, mysqlx::Value> *> &queryRes,
                    std::vector<std::pair<size_t, size_t>> &pairPos);
 
     std::string toStdString(mysqlx::Value &value);

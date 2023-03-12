@@ -5,6 +5,7 @@
 #pragma once
 
 #include "../util/Utility.h"
+#include "TriplesMap.h"
 
 class SelectTable
 {
@@ -46,19 +47,19 @@ public:
 //    std::vector<SelectField> fields;
     mysqlx::Session session;
     mysqlx::Schema db;
-    std::vector<folly::ConcurrentHashMap<std::string, mysqlx::Value> *> result;
+    folly::ConcurrentHashMap<size_t, folly::ConcurrentHashMap<std::string, mysqlx::Value> *> result;
 
     SelectQuery();
 
     ~SelectQuery();
 
-    void getRows(std::string &tableName, std::vector<std::string> &columnNames);
+//    void getRows(std::string &tableName, std::vector<std::string> &columnNames);
 
-    void getRows(std::string &tableName, std::string &subjectColName, std::vector<std::string> &columnNames);
+//    void getRows(std::string &tableName, std::string &subjectColName, std::vector<std::string> &columnNames);
 
-    void getRows(std::string &tableName);
+    void getRows(std::string tableName);
 
-    void getRowsBySql(std::string &sql);
+    void getJoinRows(std::string tableName, const RefObjectMap &refObjectMap);
 
     void clearResult();
 };

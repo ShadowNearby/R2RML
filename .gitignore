@@ -118,4 +118,5 @@ build/
 cmake-build-release/
 input
 output
+test/
 

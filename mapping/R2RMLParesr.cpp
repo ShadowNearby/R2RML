@@ -9,265 +9,290 @@ bool blankNode(const std::string &node)
 }
 
 
-folly::ConcurrentHashMap<std::string, TriplesMap> R2RMLParser::triplesMaps = folly::ConcurrentHashMap<std::string, TriplesMap>();
-folly::ConcurrentHashMap<std::string, RefObjectMap> R2RMLParser::refObjectMaps = folly::ConcurrentHashMap<std::string, RefObjectMap>();
-folly::ConcurrentHashMap<std::string, ObjectMap> R2RMLParser::objectMaps = folly::ConcurrentHashMap<std::string, ObjectMap>();
+std::unordered_map<std::string, TriplesMap> R2RMLParser::triplesMaps = std::unordered_map<std::string, TriplesMap>();
+std::unordered_map<std::string, RefObjectMap> R2RMLParser::refObjectMaps = std::unordered_map<std::string, RefObjectMap>();
+std::unordered_map<std::string, ObjectMap> R2RMLParser::objectMaps = std::unordered_map<std::string, ObjectMap>();
 
-void R2RMLParser::parse(KVstore &store)
+void R2RMLParser::parse(ConKVStore &store)
 {
-    std::vector<Triple> res;
-    store.getAllTriples(res);
-    std::vector<Triple> triplesFromStore;
+    folly::ConcurrentHashMap<size_t, Triple> triplesFromStore;
     store.getTriplesByPreObj(triplesFromStore, rrPrefix::type_, rrPrefix::triplesMap_);
-//    std::cout << triplesFromStore.size() << std::endl;
     for (const auto &item: triplesFromStore) {
-        auto tripleMapName = item.getSubject();
+        auto tripleMapName = item.second.getSubject();
         triplesMaps.insert_or_assign(tripleMapName, TriplesMap());
     }
-    for (auto triplesMap: triplesMaps) {
-        auto key = triplesMap.first;
+    for (auto it = triplesMaps.begin(); it != triplesMaps.end(); ++it) {
+        auto key = it->first;
+        auto &t = it->second;
         ///     logicalTable
-        store.getTriplesBySubPre(triplesFromStore, triplesMap.first, rrPrefix::logicalTable_);
-        auto logicalTable = triplesFromStore.front().getObject();
+        store.getTriplesBySubPre(triplesFromStore, it->first, rrPrefix::logicalTable_);
+        auto logicalTable = triplesFromStore.begin()->second.getObject();
         ///     logicalTable tableName
         store.getTriplesBySubPre(triplesFromStore, logicalTable, rrPrefix::tableName_);
         if (!triplesFromStore.empty()) {
-            auto tableName = triplesFromStore.front().getObject();
-            triplesMap.second.logicalTable.tableName = tableName;
+            auto tableName = triplesFromStore.begin()->second.getObject();
+            it->second.logicalTable.tableName = tableName;
         }
         ///     logicalTable sqlQuery
         store.getTriplesBySubPre(triplesFromStore, logicalTable, rrPrefix::sqlQuery_);
         if (!triplesFromStore.empty()) {
-            auto sqlQuery = triplesFromStore.front().getObject();
-            triplesMap.second.logicalTable.sqlQuery = sqlQuery;
+            auto sqlQuery = triplesFromStore.begin()->second.getObject();
+            it->second.logicalTable.sqlQuery = sqlQuery;
         }
         ///     subjectMap
-        store.getTriplesBySubPre(triplesFromStore, triplesMap.first, rrPrefix::subjectMap_);
+        store.getTriplesBySubPre(triplesFromStore, it->first, rrPrefix::subjectMap_);
         if (!triplesFromStore.empty()) {
-            auto subjectMap = triplesFromStore.front().getObject();
+            auto subjectMap = triplesFromStore.begin()->second.getObject();
             ///     subjectMap class
             store.getTriplesBySubPre(triplesFromStore, subjectMap, rrPrefix::class_);
             if (!triplesFromStore.empty()) {
-                auto subjectMapClass = triplesFromStore.front().getObject();
-                triplesMap.second.subjectMap.subjectClass = subjectMapClass;
+                auto subjectMapClass = triplesFromStore.begin()->second.getObject();
+                it->second.subjectMap.subjectClass = subjectMapClass;
             }
             ///     subjectMap template
             store.getTriplesBySubPre(triplesFromStore, subjectMap, rrPrefix::template_);
             if (!triplesFromStore.empty()) {
-                auto subjectMapTemplate = triplesFromStore.front().getObject();
-                triplesMap.second.subjectMap.termMap.type_ = Template_;
-                triplesMap.second.subjectMap.termMap.template_ = subjectMapTemplate;
+                auto subjectMapTemplate = triplesFromStore.begin()->second.getObject();
+                it->second.subjectMap.termMap.type_ = Template_;
+                it->second.subjectMap.termMap.template_ = subjectMapTemplate;
             }
             ///     subjectMap Constant_
             store.getTriplesBySubPre(triplesFromStore, subjectMap, rrPrefix::constant_);
             if (!triplesFromStore.empty()) {
-                auto constant = triplesFromStore.front().getObject();
-                triplesMap.second.subjectMap.termMap.type_ = Constant_;
-                triplesMap.second.subjectMap.termMap.constant_ = constant;
+                auto constant = triplesFromStore.begin()->second.getObject();
+                it->second.subjectMap.termMap.type_ = Constant_;
+                it->second.subjectMap.termMap.constant_ = constant;
             }
             ///     subjectMap Column_
             store.getTriplesBySubPre(triplesFromStore, subjectMap, rrPrefix::column_);
             if (!triplesFromStore.empty()) {
-                auto column = triplesFromStore.front().getObject();
-                triplesMap.second.subjectMap.termMap.type_ = Column_;
-                triplesMap.second.subjectMap.termMap.column_ = column;
+                auto column = triplesFromStore.begin()->second.getObject();
+                it->second.subjectMap.termMap.type_ = Column_;
+                it->second.subjectMap.termMap.column_ = column;
             }
             ///     subjectMap graph
             store.getTriplesBySubPre(triplesFromStore, subjectMap, rrPrefix::graph_);
             if (!triplesFromStore.empty()) {
-                auto graph = triplesFromStore.front().getObject();
-                triplesMap.second.subjectMap.graph = graph;
+                auto graph = triplesFromStore.begin()->second.getObject();
+                it->second.subjectMap.graph = graph;
             }
             ///     subjectMap graphMap
             store.getTriplesBySubPre(triplesFromStore, subjectMap, rrPrefix::graphMap_);
             if (!triplesFromStore.empty()) {
-                auto graphMap = triplesFromStore.front().getObject();
+                auto graphMap = triplesFromStore.begin()->second.getObject();
                 ///     subjectMap graphMap template
                 store.getTriplesBySubPre(triplesFromStore, graphMap, rrPrefix::template_);
                 if (!triplesFromStore.empty()) {
-                    auto &graphMapTemplate = triplesFromStore.front().getObject();
-                    triplesMap.second.subjectMap.graphMap.termMap.type_ = Template_;
-                    triplesMap.second.subjectMap.graphMap.termMap.template_ = graphMapTemplate;
+                    auto &graphMapTemplate = triplesFromStore.begin()->second.getObject();
+                    it->second.subjectMap.graphMap.termMap.type_ = Template_;
+                    it->second.subjectMap.graphMap.termMap.template_ = graphMapTemplate;
                 }
                 ///     subjectMap graphMap Constant_
                 store.getTriplesBySubPre(triplesFromStore, graphMap, rrPrefix::constant_);
                 if (!triplesFromStore.empty()) {
-                    auto constant = triplesFromStore.front().getObject();
-                    triplesMap.second.subjectMap.graphMap.termMap.type_ = Constant_;
-                    triplesMap.second.subjectMap.graphMap.termMap.template_ = constant;
+                    auto constant = triplesFromStore.begin()->second.getObject();
+                    it->second.subjectMap.graphMap.termMap.type_ = Constant_;
+                    it->second.subjectMap.graphMap.termMap.template_ = constant;
                 }
                 ///     subjectMap graphMap Column_
                 store.getTriplesBySubPre(triplesFromStore, graphMap, rrPrefix::column_);
                 if (!triplesFromStore.empty()) {
-                    auto column = triplesFromStore.front().getObject();
-                    triplesMap.second.subjectMap.graphMap.termMap.type_ = Column_;
-                    triplesMap.second.subjectMap.graphMap.termMap.template_ = column;
+                    auto column = triplesFromStore.begin()->second.getObject();
+                    it->second.subjectMap.graphMap.termMap.type_ = Column_;
+                    it->second.subjectMap.graphMap.termMap.template_ = column;
                 }
             }
-            triplesMaps.assign(key, triplesMap.second);
+            triplesMaps[key] = it->second;
         }
         ///     predicateObjectMaps
-        store.getTriplesBySubPre(triplesFromStore, triplesMap.first, rrPrefix::predicateObjectMap_);
+        store.getTriplesBySubPre(triplesFromStore, it->first, rrPrefix::predicateObjectMap_);
         std::vector<std::string> preobjMapIndexs;
         for (auto &item: triplesFromStore)
-            preobjMapIndexs.emplace_back(item.getObject());
+            preobjMapIndexs.emplace_back(item.second.getObject());
         for (auto &preobjMapIndex: preobjMapIndexs) {
             PredicateObjectMap preobjMap;
             /// predicateObjectMap predicate
             store.getTriplesBySubPre(triplesFromStore, preobjMapIndex, rrPrefix::predicate_);
             if (!triplesFromStore.empty()) {
-                auto pre = triplesFromStore.front().getObject();
-                preobjMap.predicate = pre;
+                for (const auto &item: triplesFromStore) {
+                    PredicateMap preMap;
+                    preMap.termMap.constant_ = item.second.getObject();
+                    preobjMap.predicateMap.emplace_back(preMap);
+                }
             } else {
                 /// predicateObjectMap predicateMap
                 store.getTriplesBySubPre(triplesFromStore, preobjMapIndex, rrPrefix::predicateMap_);
-                auto preMap = triplesFromStore.front().getObject();
-                /// predicateObjectMap predicateMap Column_
-                store.getTriplesBySubPre(triplesFromStore, preMap, rrPrefix::column_);
-                if (!triplesFromStore.empty()) {
-                    auto column = triplesFromStore.front().getObject();
-                    preobjMap.predicateMap.termMap.type_ = Column_;
-                    preobjMap.predicateMap.termMap.column_ = column;
+                std::vector<std::string> preMapIndexs;
+                for (const auto &preMapIt: triplesFromStore) {
+                    preMapIndexs.emplace_back(preMapIt.second.getObject());
                 }
-                /// predicateObjectMap predicateMap template
-                store.getTriplesBySubPre(triplesFromStore, preMap, rrPrefix::template_);
-                if (!triplesFromStore.empty()) {
-                    auto mapTemplate = triplesFromStore.front().getObject();
-                    preobjMap.predicateMap.termMap.type_ = Template_;
-                    preobjMap.predicateMap.termMap.template_ = mapTemplate;
-                }
-                /// predicateObjectMap predicateMap Constant_
-                store.getTriplesBySubPre(triplesFromStore, preMap, rrPrefix::constant_);
-                if (!triplesFromStore.empty()) {
-                    auto constant = triplesFromStore.front().getObject();
-                    preobjMap.predicateMap.termMap.type_ = Constant_;
-                    preobjMap.predicateMap.termMap.constant_ = constant;
+                for (const auto &preMapNode: preMapIndexs) {
+                    PredicateMap preMap;
+                    /// predicateObjectMap predicateMap Column_
+                    store.getTriplesBySubPre(triplesFromStore, preMapNode, rrPrefix::column_);
+                    if (!triplesFromStore.empty()) {
+                        auto column = triplesFromStore.begin()->second.getObject();
+                        preMap.termMap.type_ = Column_;
+                        preMap.termMap.column_ = column;
+                    }
+                    /// predicateObjectMap predicateMap template
+                    store.getTriplesBySubPre(triplesFromStore, preMapNode, rrPrefix::template_);
+                    if (!triplesFromStore.empty()) {
+                        auto mapTemplate = triplesFromStore.begin()->second.getObject();
+                        preMap.termMap.type_ = Template_;
+                        preMap.termMap.template_ = mapTemplate;
+                    }
+                    /// predicateObjectMap predicateMap Constant_
+                    store.getTriplesBySubPre(triplesFromStore, preMapNode, rrPrefix::constant_);
+                    if (!triplesFromStore.empty()) {
+                        auto constant = triplesFromStore.begin()->second.getObject();
+                        preMap.termMap.type_ = Constant_;
+                        preMap.termMap.constant_ = constant;
+                    }
+                    preobjMap.predicateMap.emplace_back(preMap);
                 }
             }
             /// predicateObjectMap object
             store.getTriplesBySubPre(triplesFromStore, preobjMapIndex, rrPrefix::object_);
             if (!triplesFromStore.empty()) {
-                auto obj = triplesFromStore.front().getObject();
-                preobjMap.object = obj;
+                for (const auto &item: triplesFromStore) {
+                    ObjectMap objMap;
+                    objMap.termMap.constant_ = item.second.getObject();
+                    preobjMap.objectMap.emplace_back(objMap);
+                }
             } else {
                 /// predicateObjectMap objectMap
                 store.getTriplesBySubPre(triplesFromStore, preobjMapIndex, rrPrefix::objectMap_);
-                auto objMap = triplesFromStore.front().getObject();
-                /// predicateObjectMap objectMap Column_
-                if (blankNode(objMap)) {
-                    store.getTriplesBySubPre(triplesFromStore, objMap, rrPrefix::column_);
-                    if (!triplesFromStore.empty()) {
-                        auto column = triplesFromStore.front().getObject();
-                        preobjMap.objectMap.termMap.type_ = Column_;
-                        preobjMap.objectMap.termMap.column_ = column;
-                    }
-                    /// predicateObjectMap objectMap template
-                    store.getTriplesBySubPre(triplesFromStore, objMap, rrPrefix::template_);
-                    if (!triplesFromStore.empty()) {
-                        auto objMapTemplate = triplesFromStore.front().getObject();
-                        preobjMap.objectMap.termMap.type_ = Template_;
-                        preobjMap.objectMap.termMap.template_ = objMapTemplate;
-                    }
-                    /// predicateObjectMap objectMap Constant_
-                    store.getTriplesBySubPre(triplesFromStore, objMap, rrPrefix::constant_);
-                    if (!triplesFromStore.empty()) {
-                        auto constant = triplesFromStore.front().getObject();
-                        preobjMap.objectMap.termMap.type_ = Constant_;
-                        preobjMap.objectMap.termMap.constant_ = constant;
-                    }
-                } else
-                    preobjMap.objectMap.constant = objMap;
-
-                /// predicateObjectMap objectMap RefObjectMap
-                store.getTriplesBySubPreObj(triplesFromStore, objMap, rrPrefix::type_, rrPrefix::RefObjectMap_);
-                if (!triplesFromStore.empty()) {
-                    auto refObjectMap = triplesFromStore.front().getSubject();
-                    /// predicateObjectMap objectMap RefObjectMap parentTriplesMap
-                    store.getTriplesBySubPre(triplesFromStore, refObjectMap, rrPrefix::parentTriplesMap_);
-                    if (!triplesFromStore.empty()) {
-                        auto parentTriplesMap = triplesFromStore.front().getObject();
-                        preobjMap.objectMap.refObjectMap.parentTripleMap = parentTriplesMap;
-                    }
-                    /// predicateObjectMap objectMap RefObjectMap joinCondition
-                    store.getTriplesBySubPre(triplesFromStore, refObjectMap, rrPrefix::joinCondition_);
-                    if (!triplesFromStore.empty()) {
-                        auto join = triplesFromStore.front().getObject();
-                        /// predicateObjectMap objectMap RefObjectMap joinCondition child
-                        store.getTriplesBySubPre(triplesFromStore, join, rrPrefix::child_);
-                        auto child = triplesFromStore.front().getObject();
-                        preobjMap.objectMap.refObjectMap.join.child = child;
-                        /// predicateObjectMap objectMap RefObjectMap joinCondition parent
-                        store.getTriplesBySubPre(triplesFromStore, join, rrPrefix::parent_);
-                        auto parent = triplesFromStore.front().getObject();
-                        preobjMap.objectMap.refObjectMap.join.parent = parent;
-                    }
+                std::vector<std::string> objMapIndexs;
+                for (const auto &objMapIt: triplesFromStore) {
+                    objMapIndexs.emplace_back(objMapIt.second.getObject());
+                }
+                for (const auto &objMapNode: objMapIndexs) {
+                    ObjectMap objMap;
+                    /// predicateObjectMap objectMap Column_
+                    if (!blankNode(objMapNode)) {
+                        int a, b, c;
+                        store.getTriplesBySubPre(triplesFromStore, objMapNode, rrPrefix::column_);
+                        a = triplesFromStore.size();
+                        if (!triplesFromStore.empty()) {
+                            auto column = triplesFromStore.begin()->second.getObject();
+                            objMap.termMap.type_ = Column_;
+                            objMap.termMap.column_ = column;
+                        }
+                        /// predicateObjectMap objectMap template
+                        store.getTriplesBySubPre(triplesFromStore, objMapNode, rrPrefix::template_);
+                        b = triplesFromStore.size();
+                        if (!triplesFromStore.empty()) {
+                            auto objMapTemplate = triplesFromStore.begin()->second.getObject();
+                            objMap.termMap.type_ = Template_;
+                            objMap.termMap.template_ = objMapTemplate;
+                        }
+                        /// predicateObjectMap objectMap Constant_
+                        store.getTriplesBySubPre(triplesFromStore, objMapNode, rrPrefix::constant_);
+                        c = triplesFromStore.size();
+                        if (!triplesFromStore.empty()) {
+                            auto constant = triplesFromStore.begin()->second.getObject();
+                            objMap.termMap.type_ = Constant_;
+                            objMap.termMap.constant_ = constant;
+                        }
+                        /// predicateObjectMap objectMap RefObjectMap
+                        if (a == 0 && b == 0 && c == 0) {
+                            objMap.constant = objMapNode;
+                            /// predicateObjectMap objectMap RefObjectMap parentTriplesMap
+                            store.getTriplesBySubPre(triplesFromStore, objMapNode, rrPrefix::parentTriplesMap_);
+                            auto parentTriplesMap = triplesFromStore.begin()->second.getObject();
+                            objMap.refObjectMap.parentNode = parentTriplesMap;
+                            store.getTriplesBySubPre(triplesFromStore, parentTriplesMap, rrPrefix::logicalTable_);
+                            auto parentLogicalTable = triplesFromStore.begin()->second.getObject();
+                            ///     logicalTable tableName
+                            store.getTriplesBySubPre(triplesFromStore, parentLogicalTable, rrPrefix::tableName_);
+                            if (!triplesFromStore.empty()) {
+                                auto tableName = triplesFromStore.begin()->second.getObject();
+                                objMap.refObjectMap.parentTableName = tableName;
+                            }
+                            /// predicateObjectMap objectMap RefObjectMap joinCondition
+                            store.getTriplesBySubPre(triplesFromStore, objMapNode, rrPrefix::joinCondition_);
+                            for (auto &triple: triplesFromStore) {
+                                auto join = triple.second.getObject();
+                                Join j;
+                                store.getTriplesBySubPre(triplesFromStore, join, rrPrefix::child_);
+                                j.child = triplesFromStore.begin()->second.getObject();
+                                store.getTriplesBySubPre(triplesFromStore, join, rrPrefix::parent_);
+                                j.parent = triplesFromStore.begin()->second.getObject();
+                                objMap.refObjectMap.join.emplace_back(j);
+                            }
+                        }
+                    } else { objMap.constant = objMapNode; }
+                    preobjMap.objectMap.emplace_back(objMap);
                 }
             }
-            triplesMap.second.predicateObjectMaps.emplace_back(preobjMap);
+            it->second.predicateObjectMaps.emplace_back(preobjMap);
+
         }
     }
-    store.getTriplesByPreObj(triplesFromStore, rrPrefix::type_, rrPrefix::RefObjectMap_);
+    for (const auto &it: R2RMLParser::triplesMaps) {
+        for (const auto &item: it.second.predicateObjectMaps) {
+//            printf("%d %d %d\n", it.second.predicateObjectMaps.size(), item.predicateMap.size(), item.objectMap.size());
+        }
+    }
+    /*
+    store.getTriplesByPre(triplesFromStore, rrPrefix::parentTriplesMap_);
     for (auto &item: triplesFromStore) {
-        auto refObjectMap = item.getSubject();
+        auto refObjectMap = item.second.getSubject();
         refObjectMaps.insert_or_assign(refObjectMap, RefObjectMap());
     }
-    for (auto refObjectMap: refObjectMaps) {
+    for (auto &refObjectMap: refObjectMaps) {
         auto key = refObjectMap.first;
-        /// predicateObjectMap objectMap RefObjectMap parentTriplesMap
-        store.getTriplesBySubPre(triplesFromStore, refObjectMap.first, rrPrefix::parentTriplesMap_);
-        if (!triplesFromStore.empty()) {
-            auto parentTriplesMap = triplesFromStore.front().getObject();
-            refObjectMap.second.parentTripleMap = parentTriplesMap;
-        }
-        /// predicateObjectMap objectMap RefObjectMap joinCondition
+        /// predicateObjectMap objectMap parentTriplesMap joinCondition
         store.getTriplesBySubPre(triplesFromStore, refObjectMap.first, rrPrefix::joinCondition_);
         if (!triplesFromStore.empty()) {
-            auto join = triplesFromStore.front().getObject();
+            auto join = triplesFromStore.begin()->second.getObject();
             /// predicateObjectMap objectMap RefObjectMap joinCondition child
             store.getTriplesBySubPre(triplesFromStore, join, rrPrefix::child_);
-            auto child = triplesFromStore.front().getObject();
+            auto child = triplesFromStore.begin()->second.getObject();
             refObjectMap.second.join.child = child;
             /// predicateObjectMap objectMap RefObjectMap joinCondition parent
             store.getTriplesBySubPre(triplesFromStore, join, rrPrefix::parent_);
-            auto parent = triplesFromStore.front().getObject();
+            auto parent = triplesFromStore.begin()->second.getObject();
             refObjectMap.second.join.parent = parent;
         }
-        refObjectMaps.assign(key, refObjectMap.second);
+        refObjectMaps[key] = refObjectMap.second;
     }
     store.getTriplesByPreObj(triplesFromStore, rrPrefix::type_, rrPrefix::ObjectMap_);
     for (auto &item: triplesFromStore) {
-        objectMaps.insert_or_assign(item.getSubject(), ObjectMap());
+        objectMaps.insert_or_assign(item.second.getSubject(), ObjectMap());
     }
     for (auto &item: objectMaps) {
         auto key = item.first;
         auto objectMap = item.second;
         store.getTriplesBySubPre(triplesFromStore, key, rrPrefix::column_);
         if (!triplesFromStore.empty()) {
-            auto column = triplesFromStore.front().getObject();
+            auto column = triplesFromStore.begin()->second.getObject();
             objectMap.termMap.type_ = Column_;
             objectMap.termMap.column_ = column;
         }
         /// predicateObjectMap objectMap template
         store.getTriplesBySubPre(triplesFromStore, key, rrPrefix::template_);
         if (!triplesFromStore.empty()) {
-            auto objMapTemplate = triplesFromStore.front().getObject();
+            auto objMapTemplate = triplesFromStore.begin()->second.getObject();
             objectMap.termMap.type_ = Template_;
             objectMap.termMap.template_ = objMapTemplate;
         }
         /// predicateObjectMap objectMap Constant_
         store.getTriplesBySubPre(triplesFromStore, key, rrPrefix::constant_);
         if (!triplesFromStore.empty()) {
-            auto constant = triplesFromStore.front().getObject();
+            auto constant = triplesFromStore.begin()->second.getObject();
             objectMap.termMap.type_ = Constant_;
             objectMap.termMap.constant_ = constant;
         }
     }
+     */
 }
 
-void R2RMLParser::parse(std::vector<Triple> &triples)
-{
-    KVstore store;
-    store.insert(triples);
-    parse(store);
-}
+//void R2RMLParser::parse(std::vector<Triple> &triples)
+//{
+//    ConKVStore store;
+//    store.insert(triples);
+//    parse(store);
+//}
 

@@ -37,6 +37,7 @@ namespace rrPrefix
     static const std::string class_ = "<http://www.w3.org/ns/r2rml#class>";
     static const std::string ObjectMap_ = "<http://www.w3.org/ns/r2rml#ObjectMap>";
     static const std::string objectMap_ = "<http://www.w3.org/ns/r2rml#objectMap>";
+//    static const std::string parentTriplesMap_ = "<http://www.w3.org/ns/r2rml#parentTriplesMap>";
 //    const std::string refObjectMap_ = "<http://www.w3.org/ns/r2rml#refObjectMap>";
 }
 namespace xsdPrefix
@@ -148,12 +149,13 @@ class RefObjectMap
 {
 
 public:
-    std::string parentTripleMap;
-    Join join;
+    std::string parentTableName;
+    std::string parentNode;
+    std::vector<Join> join;
 
     [[nodiscard]] bool empty() const
     {
-        return join.empty() && parentTripleMap.empty();
+        return join.empty() && parentTableName.empty();
     }
 };
 
@@ -180,22 +182,20 @@ public:
 class PredicateObjectMap
 {
 public:
-    ObjectMap objectMap;
-    PredicateMap predicateMap;
-    std::string predicate;
-    std::string object;
+    std::vector<ObjectMap> objectMap;
+    std::vector<PredicateMap> predicateMap;
     std::string graph;
 
     [[nodiscard]] bool empty() const
     {
-        return objectMap.empty() && predicate.empty() && object.empty() && predicate.empty();
+        return objectMap.empty() && predicateMap.empty();
     }
 
-    std::string &getPredicate();
-
-    std::string &getObject();
-
-    std::string &getGraph();
+//    std::string &getPredicate();
+//
+//    std::string &getObject();
+//
+//    std::string &getGraph();
 
 };
 

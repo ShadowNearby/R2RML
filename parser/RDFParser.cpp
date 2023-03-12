@@ -252,7 +252,7 @@ size_t RDFParser::parseFile(std::vector<Triple> &_triple_vector,
     auto end = std::chrono::steady_clock::now();
     auto runTime = std::chrono::duration<double>(end - start).count();
     printf("RDFParser parseFile done!\n"
-           "Total Triples: %llu\n"
+           "Total Mapping Lines: %llu\n"
            "RunTime: %fs\n", numLines - 1, runTime);
     return numLines - 1;
 }
