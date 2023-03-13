@@ -32,19 +32,19 @@ int main(int argc, char *argv[])
 //    }
 //    f.close();
     auto start = std::chrono::steady_clock::now();
-//    omp_set_num_threads(4);
+//    omp_set_num_threads(16);
     Handle handle(kvstore);
     folly::ConcurrentHashMap<size_t, Triple> result;
-    handle.result.getAllTriples(result);
-    f.open("../output", std::ios::out);
-    for (const auto &item: result)
-        f << item.second.getSubject() << " " << item.second.getPredicate() << " "
-          << item.second.getObject()
-          << " ." << std::endl;
-    f.close();
+//    f.open("../output", std::ios::out);
+//    for (const auto &item: result)
+//        f << item.second.getSubject() << " " << item.second.getPredicate() << " "
+//          << item.second.getObject()
+//          << " ." << std::endl;
+//    f.close();
     auto end = std::chrono::steady_clock::now();
     auto runTime = std::chrono::duration<double>(end - start).count();
-    printf("sum:%d %d runtime:%f\n", handle.result.triple2id.size(), handle.result.count, runTime);
+    handle.result.getAllTriples(result);
+    printf("sum:%zu runtime:%f\n", handle.result.triple2id.size(), runTime);
 //    printf("RunTime: %fs\nCount:%zu\n", runTime, result.size());
 
 //    folly::ConcurrentHashMap<size_t, Triple> result;
@@ -54,5 +54,4 @@ int main(int argc, char *argv[])
 //        printf("%s %s %s\n", t.getSubject().c_str(), t.getPredicate().c_str(), t.getObject().c_str());
 //    }
     return 0;
-
 }

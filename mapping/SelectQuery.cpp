@@ -24,24 +24,31 @@ SelectQuery::SelectQuery() : session(mysqlx::Session("localhost", 33060, "yanjs"
 
 void SelectQuery::getRows(std::string tableName)
 {
+    static double cost = 0;
     result.clear();
     auto table = db.getTable(tableName);
     auto sqlResult = table.select("*").execute();
     auto &columns = sqlResult.getColumns();
-    auto start = std::chrono::steady_clock::now();
     std::vector<std::string> labels;
     for (const auto &item: columns) {
         labels.emplace_back(item.getColumnLabel());
     }
-//    printf("tableName:%s\n", tableName.c_str());
-//    printf("labels:%d\n", labels.size());
     auto it = sqlResult.begin();
     std::vector<decltype(*it)> itVec;
     for (; it != sqlResult.end(); ++it) {
         itVec.push_back(*it);
     }
-    auto tableData = new folly::ConcurrentHashMap<size_t, folly::ConcurrentHashMap<std::string, mysqlx::Value> *>();
-//#pragma omp parallel for
+//    auto j = 0;
+//    for (auto it = sqlResult.begin(); it != sqlResult.end(); ++it, ++j) {
+//        auto row = new folly::ConcurrentHashMap<std::string, mysqlx::Value>();
+//        for (int i = 0; i < labels.size(); ++i) {
+//            row->insert_or_assign(labels[i], it.operator*().get(i));
+//        }
+//        result.insert_or_assign(j, row);
+//    }
+    auto start = std::chrono::steady_clock::now();
+    omp_set_num_threads(3);
+#pragma omp parallel for
     for (int j = 0; j < itVec.size(); ++j) {
         auto row = new folly::ConcurrentHashMap<std::string, mysqlx::Value>();
         for (int i = 0; i < labels.size(); ++i) {
@@ -50,8 +57,8 @@ void SelectQuery::getRows(std::string tableName)
         result.insert_or_assign(j, row);
     }
     auto end = std::chrono::steady_clock::now();
-    auto runTime = std::chrono::duration<double>(end - start).count();
-//    printf("SQL RunTime: %fs\n", runTime);
+    cost += std::chrono::duration<double>(end - start).count();
+    printf("SQL RunTime: %fs\n", cost);
 }
 
 void SelectQuery::getJoinRows(std::string tableName, const RefObjectMap &refObjectMap)
@@ -95,8 +102,8 @@ void SelectQuery::getJoinRows(std::string tableName, const RefObjectMap &refObje
     for (; it != sqlResult.end(); ++it) {
         itVec.push_back(*it);
     }
-//#pragma omp parallel for
-    auto tableData = new folly::ConcurrentHashMap<size_t, folly::ConcurrentHashMap<std::string, mysqlx::Value> *>();
+    omp_set_num_threads(3);
+#pragma omp parallel for
     for (int j = 0; j < itVec.size(); ++j) {
         auto row = new folly::ConcurrentHashMap<std::string, mysqlx::Value>();
         for (int i = 0; i < labels.size(); ++i) {

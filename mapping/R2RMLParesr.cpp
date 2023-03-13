@@ -171,7 +171,7 @@ void R2RMLParser::parse(ConKVStore &store)
                     ObjectMap objMap;
                     /// predicateObjectMap objectMap Column_
                     if (!blankNode(objMapNode)) {
-                        int a, b, c;
+                        size_t a, b, c;
                         store.getTriplesBySubPre(triplesFromStore, objMapNode, rrPrefix::column_);
                         a = triplesFromStore.size();
                         if (!triplesFromStore.empty()) {
@@ -227,12 +227,23 @@ void R2RMLParser::parse(ConKVStore &store)
                 }
             }
             it->second.predicateObjectMaps.emplace_back(preobjMap);
-
         }
     }
-    for (const auto &it: R2RMLParser::triplesMaps) {
-        for (const auto &item: it.second.predicateObjectMaps) {
-//            printf("%d %d %d\n", it.second.predicateObjectMaps.size(), item.predicateMap.size(), item.objectMap.size());
+    for (auto &triplesMap: R2RMLParser::triplesMaps) {
+        for (auto &preObjMap: triplesMap.second.predicateObjectMaps) {
+            for (auto &objMap: preObjMap.objectMap) {
+                for (auto &join: objMap.refObjectMap.join) {
+                    auto parentMap = R2RMLParser::triplesMaps[objMap.refObjectMap.parentNode];
+                    if (join.parent == join.child &&
+                        triplesMap.second.logicalTable.tableName == parentMap.logicalTable.tableName) {
+//                        printf("p:%s c:%s\n", join.parent.c_str(), join.child.c_str());
+//                        printf("p_table:%s c_table:%s\n", parentMap.logicalTable.tableName.c_str(),
+//                               objMap.refObjectMap.parentTableName.c_str());
+                        objMap.constant.clear();
+                        objMap.termMap = parentMap.subjectMap.termMap;
+                    }
+                }
+            }
         }
     }
     /*

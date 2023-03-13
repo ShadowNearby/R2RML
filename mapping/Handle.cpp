@@ -95,7 +95,9 @@ std::string removeQuot(std::string str)
 
 Handle::Handle(ConKVStore &store)
 {
-    static int sum = 0;
+    double non_join_cost = 0;
+    double join_cost = 0;
+    double replace_cost = 0;
     parser.parse(store);
     auto it = R2RMLParser::triplesMaps.begin();
     it = R2RMLParser::triplesMaps.begin();
@@ -114,7 +116,10 @@ Handle::Handle(ConKVStore &store)
         /// subjectMap
         subject = tripleMap.subjectMap.getSubject();
         if (!tripleMap.subjectMap.subjectClass.empty()) {
+            auto start = std::chrono::steady_clock::now();
             selectQuery.getRows(logicalTableName);
+            auto end = std::chrono::steady_clock::now();
+            non_join_cost += std::chrono::duration<double>(end - start).count();
             folly::ConcurrentHashMap<std::string, std::vector<mysqlx::Value>> storedTemplate;
             std::string sub = subject;
             std::string pre = rrPrefix::type_;
@@ -124,7 +129,10 @@ Handle::Handle(ConKVStore &store)
             std::vector<std::pair<size_t, size_t>> objPairPos;
             auto &queryRes = selectQuery.result;
             findBrace(storedTemplate, sub, queryRes, subPairPos);
+            start = std::chrono::steady_clock::now();
             replaceTemplate(sub, pre, obj, queryRes, subPairPos, prePairPos, objPairPos, false);
+            end = std::chrono::steady_clock::now();
+            replace_cost += std::chrono::duration<double>(end - start).count();
         }     /// predicateObjectMap
 
         for (auto &predicateObjectMap: tripleMap.predicateObjectMaps) {
@@ -135,12 +143,18 @@ Handle::Handle(ConKVStore &store)
                     // non-parentTriplesMap
                     if (objectMap.constant.empty()) {
                         object = objectMap.termMap.getValue();
+                        auto start = std::chrono::steady_clock::now();
                         selectQuery.getRows(logicalTableName);
+                        auto end = std::chrono::steady_clock::now();
+                        non_join_cost += std::chrono::duration<double>(end - start).count();
                     }
                         // parentTriplesMap
                     else {
                         object = R2RMLParser::triplesMaps[objectMap.refObjectMap.parentNode].subjectMap.getSubject();
+                        auto start = std::chrono::steady_clock::now();
                         selectQuery.getJoinRows(logicalTableName, objectMap.refObjectMap);
+                        auto end = std::chrono::steady_clock::now();
+                        join_cost += std::chrono::duration<double>(end - start).count();
                         join = true;
                     }
                     folly::ConcurrentHashMap<std::string, std::vector<mysqlx::Value>> storedTemplate;
@@ -154,12 +168,15 @@ Handle::Handle(ConKVStore &store)
                     findBrace(storedTemplate, sub, queryRes, subPairPos);
                     findBrace(storedTemplate, pre, queryRes, prePairPos);
                     findBrace(storedTemplate, obj, queryRes, objPairPos);
+                    auto start = std::chrono::steady_clock::now();
                     replaceTemplate(sub, pre, obj, queryRes, subPairPos, prePairPos, objPairPos, join);
+                    auto end = std::chrono::steady_clock::now();
+                    replace_cost += std::chrono::duration<double>(end - start).count();
                 }
             }
         }
     }
-
+    printf("join cost:%f non join cost:%f replace cost:%f\n", join_cost, non_join_cost, replace_cost);
 }
 
 std::string Handle::toStdString(mysqlx::Value &value)
@@ -225,8 +242,9 @@ void Handle::replaceTemplate(std::string sub, std::string pre, std::string obj,
 {
     size_t size = queryRes.size();
 //    printf("%s %s %s\n", sub.c_str(), pre.c_str(), obj.c_str());
-//    printf("size: %d\n", size);
-//#pragma omp parallel for
+//    printf("size: %d\n", size)
+    omp_set_num_threads(3);
+#pragma omp parallel for
     for (int i = 0; i < size; ++i) {
         auto it = queryRes[i];
         std::string subject = sub, predicate = pre, object = obj;
