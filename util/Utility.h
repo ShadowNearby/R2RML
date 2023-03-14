@@ -16,7 +16,6 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <memory>
 #include <deque>
 #include <queue>
 #include <utility>
@@ -35,7 +34,6 @@
 #include <unordered_set>
 #include <cassert>
 #include <cmath>
-#include <chrono>
 #include <folly/concurrency/ConcurrentHashMap.h>
 #include "PairHash.h"
 #include <mysqlx/xdevapi.h>

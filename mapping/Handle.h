@@ -38,14 +38,14 @@ public:
 
 
     void replaceTemplate(std::string sub, std::string pre, std::string obj,
-                         folly::ConcurrentHashMap<size_t, folly::ConcurrentHashMap<std::string, mysqlx::Value> *> &queryRes,
+                         std::vector<std::vector<mysqlx::Value>> *queryRes,
+                         const std::unordered_map<std::string, int> &queryIndex,
                          const std::vector<std::pair<size_t, size_t>> &subPairPos,
                          const std::vector<std::pair<size_t, size_t>> &prePairPos,
                          const std::vector<std::pair<size_t, size_t>> &objPairPos, bool join);
 
-    void findBrace(folly::ConcurrentHashMap<std::string, std::vector<mysqlx::Value>> &temMap, std::string src,
-                   const folly::ConcurrentHashMap<size_t, folly::ConcurrentHashMap<std::string, mysqlx::Value> *> &queryRes,
-                   std::vector<std::pair<size_t, size_t>> &pairPos);
+    void findBrace(std::string src, std::vector<std::pair<size_t, size_t>> &pairPos,
+                   std::vector<std::string> &columnNames);
 
     std::string toStdString(mysqlx::Value &value);
 };

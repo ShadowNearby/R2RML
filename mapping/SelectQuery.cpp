@@ -3,6 +3,8 @@
 //
 
 #include "SelectQuery.h"
+
+#include <utility>
 #include "omp.h"
 
 const std::string schema_name = "gtfs-sql";
@@ -11,60 +13,50 @@ const std::string schema_name = "gtfs-sql";
 SelectQuery::SelectQuery() : session(mysqlx::Session("localhost", 33060, "yanjs", "yjs135790")),
                              db(session.getSchema(schema_name))
 {
-//    auto temp = db.getTable("stop_times");
-//    auto table = temp.select("*").execute();
-//    for (const auto &item: table.fetchAll()) {
-//        for (auto i = 0; i < item.colCount(); ++i) {
-//            std::cout << item[i] << std::endl;
-//        }
-//    }
-//    std::cout << "yes" << std::endl;
+    getAll();
 }
 
-
-void SelectQuery::getRows(std::string tableName)
+void SelectQuery::getAll()
 {
-    static double cost = 0;
-    result.clear();
-    auto table = db.getTable(tableName);
-    auto sqlResult = table.select("*").execute();
-    auto &columns = sqlResult.getColumns();
-    std::vector<std::string> labels;
-    for (const auto &item: columns) {
-        labels.emplace_back(item.getColumnLabel());
-    }
-    auto it = sqlResult.begin();
-    std::vector<decltype(*it)> itVec;
-    for (; it != sqlResult.end(); ++it) {
-        itVec.push_back(*it);
-    }
-//    auto j = 0;
-//    for (auto it = sqlResult.begin(); it != sqlResult.end(); ++it, ++j) {
-//        auto row = new folly::ConcurrentHashMap<std::string, mysqlx::Value>();
-//        for (int i = 0; i < labels.size(); ++i) {
-//            row->insert_or_assign(labels[i], it.operator*().get(i));
-//        }
-//        result.insert_or_assign(j, row);
-//    }
-    auto start = std::chrono::steady_clock::now();
-    omp_set_num_threads(3);
-#pragma omp parallel for
-    for (int j = 0; j < itVec.size(); ++j) {
-        auto row = new folly::ConcurrentHashMap<std::string, mysqlx::Value>();
-        for (int i = 0; i < labels.size(); ++i) {
-            row->insert_or_assign(labels[i], itVec[j][i]);
+    for (const auto &tableName: db.getTableNames()) {
+        std::string table_name = tableName;
+        auto sqlResult = db.getTable(tableName).select("*").execute();
+        auto &columns = sqlResult.getColumns();
+        std::unordered_map<std::string, int> labels;
+        int i = 0;
+        for (const auto &item: columns) {
+            labels[item.getColumnLabel()] = i;
+            ++i;
         }
-        result.insert_or_assign(j, row);
+        tables_index[table_name] = labels;
+        size_t column_count = labels.size();
+        auto table = new std::vector<std::vector<mysqlx::Value>>;
+        for (const auto &row: sqlResult) {
+            std::vector<mysqlx::Value> vec_row(column_count);
+            for (int j = 0; j < column_count; ++j) {
+                vec_row[j] = row[j];
+            }
+            table->emplace_back(vec_row);
+        }
+        tables[table_name] = table;
     }
-    auto end = std::chrono::steady_clock::now();
-    cost += std::chrono::duration<double>(end - start).count();
-    printf("SQL RunTime: %fs\n", cost);
 }
 
-void SelectQuery::getJoinRows(std::string tableName, const RefObjectMap &refObjectMap)
+
+void SelectQuery::getJoinRows(std::string tableName, const RefObjectMap &refObjectMap,
+                              const std::vector<std::string> &subject_columns,
+                              const std::vector<std::string> &object_columns)
 {
-    result.clear();
-    std::string child_table = tableName;
+    static double cost = 0, clear_cost = 0;
+    auto start = std::chrono::steady_clock::now();
+    printf("start join clear\n");
+    join_table.clear();
+    join_index.clear();
+    printf("end join clear\n");
+    auto end = std::chrono::steady_clock::now();
+    clear_cost += std::chrono::duration<double>(end - start).count();
+    printf("clear cost %f\n", clear_cost);
+    std::string child_table = std::move(tableName);
     std::string parent_table = refObjectMap.parentTableName.substr(1, refObjectMap.parentTableName.size() - 2);
     std::vector<std::string> child_columns;
     std::vector<std::string> parent_columns;
@@ -72,10 +64,21 @@ void SelectQuery::getJoinRows(std::string tableName, const RefObjectMap &refObje
         child_columns.emplace_back(item.child.substr(1, item.child.size() - 2));
         parent_columns.emplace_back(item.parent.substr(1, item.parent.size() - 2));
     }
-    std::string sql = "select * from (select * from `" + schema_name + "`." + child_table + ") as child,\n" +
-                      "  (select * from `" + schema_name + "`." + parent_table +
-                      ") as parent\n" +
-                      "  where child." + child_columns.front() + "=parent." + parent_columns.front() + "\n";
+    std::string child_get_columns, parent_get_columns;
+    for (const auto &item: subject_columns) {
+        child_get_columns += "child." + item + ",";
+    }
+    for (const auto &item: object_columns) {
+        parent_get_columns += "parent." + item + ",";
+    }
+    parent_get_columns.pop_back();
+    parent_get_columns.push_back(' ');
+    std::string sql =
+            "select " + child_get_columns + parent_get_columns + "from (select * from `" + schema_name + "`." +
+            child_table + ") as child,\n" +
+            "  (select * from `" + schema_name + "`." + parent_table +
+            ") as parent\n" +
+            "  where child." + child_columns.front() + "=parent." + parent_columns.front() + "\n";
     for (int i = 1; i < child_columns.size(); ++i) {
         std::string and_sql = "and child." + child_columns[i] + "=parent." + parent_columns[i] + "\n";
         sql += and_sql;
@@ -83,34 +86,55 @@ void SelectQuery::getJoinRows(std::string tableName, const RefObjectMap &refObje
     sql.pop_back();
     sql += ';';
     auto sqlResult = session.sql(sql).execute();
+    printf("%s\n", sql.c_str());
     auto &columns = sqlResult.getColumns();
-    auto column_count = sqlResult.getColumnCount();
-    std::vector<std::string> labels;
-    auto child_column_count = db.getTable(child_table).select("*").limit(1).execute().getColumnCount();
-    for (int i = 0; i < child_column_count; ++i) {
-        std::string column_name = columns[i].getColumnName();
-        column_name = "$" + column_name;
-        labels.emplace_back(column_name);
+    std::unordered_map<std::string, int> labels;
+    int index = 0;
+    size_t child_column_size = subject_columns.size();
+    for (const auto &item: columns) {
+        std::string column_name = index < child_column_size ? "$" : "#";
+        column_name += item.getColumnName();
+        labels[column_name] = index;
+        ++index;
     }
-    for (int i = child_column_count; i < column_count; ++i) {
-        std::string column_name = columns[i].getColumnName();
-        column_name = "#" + column_name;
-        labels.emplace_back(column_name);
-    }
-    auto it = sqlResult.begin();
-    std::vector<decltype(*it)> itVec;
-    for (; it != sqlResult.end(); ++it) {
-        itVec.push_back(*it);
-    }
-    omp_set_num_threads(3);
-#pragma omp parallel for
-    for (int j = 0; j < itVec.size(); ++j) {
-        auto row = new folly::ConcurrentHashMap<std::string, mysqlx::Value>();
-        for (int i = 0; i < labels.size(); ++i) {
-            row->insert_or_assign(labels[i], itVec[j][i]);
+//    printf("get child start\n");
+//    auto child_column_count = tables_index[child_table].size();
+//    printf("get child end\n");
+//    for (int i = 0; i < child_column_count; ++i) {
+//        std::string column_name = columns[i].getColumnName();
+//        if (std::find(subject_columns.begin(), subject_columns.end(), column_name) != subject_columns.end()) {
+//            column_name = "$" + column_name;
+//            column_pos.emplace_back(i);
+//            labels[column_name] = pos++;
+//        }
+//    }
+//    for (size_t i = child_column_count; i < column_count; ++i) {
+//        std::string column_name = columns[i].getColumnName();
+//        if (std::find(object_columns.begin(), object_columns.end(), column_name) != object_columns.end()) {
+//            column_name = "#" + column_name;
+//            column_pos.emplace_back(i);
+//            labels[column_name] = pos++;
+//        }
+//    }
+    join_index = labels;
+    size_t labels_size = labels.size();
+    int row_index = 0;
+    printf("start copy\n");
+    size_t row_size = sqlResult.count();
+    printf("count end\nrow_size:%zu\n", row_size);
+    start = std::chrono::steady_clock::now();
+    join_table = std::vector<std::vector<mysqlx::Value>>(row_size);
+    for (const auto &row: sqlResult) {
+        join_table[row_index] = std::vector<mysqlx::Value>(labels_size);
+        for (int i = 0; i < labels_size; ++i) {
+            join_table[row_index][i] = row[i];
         }
-        result.insert_or_assign(j, row);
+        ++row_index;
     }
+    end = std::chrono::steady_clock::now();
+    cost += std::chrono::duration<double>(end - start).count();
+    printf("end copy\n");
+    printf("join copy cost:%f\n", cost);
 }
 
 SelectQuery::~SelectQuery()
@@ -118,8 +142,38 @@ SelectQuery::~SelectQuery()
     session.close();
 }
 
+//void SelectQuery::getRows(std::string tableName)
+//{
+//    static double cost = 0;
+//    for (auto &item: result) {
+//        delete item.second;
+//    }
+//    result.clear();
+//    auto start = std::chrono::steady_clock::now();
+//    auto table = db.getTable(tableName);
+//    auto sqlResult = table.select("*").execute();
+//    auto &columns = sqlResult.getColumns();
+//    std::vector<std::string> labels;
+//    for (const auto &item: columns) {
+//        labels.emplace_back(item.getColumnLabel());
+//    }
+//    auto it = sqlResult.begin();
+//    std::vector<decltype(*it)> itVec;
+//    for (; it != sqlResult.end(); ++it) {
+//        itVec.push_back(*it);
+//    }
+//    omp_set_num_threads(3);
+//#pragma omp parallel for
+//    for (int j = 0; j < itVec.size(); ++j) {
+//        auto row = new folly::ConcurrentHashMap<std::string, mysqlx::Value>();
+//        for (int i = 0; i < labels.size(); ++i) {
+//            row->insert_or_assign(labels[i], itVec[j][i]);
+//        }
+//        result.insert_or_assign(j, row);
+//    }
+//    auto end = std::chrono::steady_clock::now();
+//    cost += std::chrono::duration<double>(end - start).count();
+//    printf("non-join sql runTime: %f\n", cost);
+//}
 
-void SelectQuery::clearResult()
-{
-    result.clear();
-}
+

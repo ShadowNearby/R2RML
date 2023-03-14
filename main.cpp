@@ -34,7 +34,6 @@ int main(int argc, char *argv[])
     auto start = std::chrono::steady_clock::now();
 //    omp_set_num_threads(16);
     Handle handle(kvstore);
-    folly::ConcurrentHashMap<size_t, Triple> result;
 //    f.open("../output", std::ios::out);
 //    for (const auto &item: result)
 //        f << item.second.getSubject() << " " << item.second.getPredicate() << " "
@@ -43,7 +42,7 @@ int main(int argc, char *argv[])
 //    f.close();
     auto end = std::chrono::steady_clock::now();
     auto runTime = std::chrono::duration<double>(end - start).count();
-    handle.result.getAllTriples(result);
+//    handle.result.getAllTriples(result);
     printf("sum:%zu runtime:%f\n", handle.result.triple2id.size(), runTime);
 //    printf("RunTime: %fs\nCount:%zu\n", runTime, result.size());
 

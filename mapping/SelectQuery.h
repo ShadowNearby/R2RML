@@ -47,7 +47,10 @@ public:
 //    std::vector<SelectField> fields;
     mysqlx::Session session;
     mysqlx::Schema db;
-    folly::ConcurrentHashMap<size_t, folly::ConcurrentHashMap<std::string, mysqlx::Value> *> result;
+    std::vector<std::vector<mysqlx::Value>> join_table;
+    std::unordered_map<std::string, int> join_index;
+    std::unordered_map<std::string, std::vector<std::vector<mysqlx::Value>> *> tables;
+    std::unordered_map<std::string, std::unordered_map<std::string, int>> tables_index;
 
     SelectQuery();
 
@@ -57,9 +60,13 @@ public:
 
 //    void getRows(std::string &tableName, std::string &subjectColName, std::vector<std::string> &columnNames);
 
-    void getRows(std::string tableName);
+//    void getRows(std::string tableName);
 
-    void getJoinRows(std::string tableName, const RefObjectMap &refObjectMap);
+    void getJoinRows(std::string tableName, const RefObjectMap &refObjectMap,
+                     const std::vector<std::string> &subject_columns,
+                     const std::vector<std::string> &object_columns);
+
+    void getAll();
 
     void clearResult();
 };
