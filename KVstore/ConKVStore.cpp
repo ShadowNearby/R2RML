@@ -7,29 +7,33 @@
 bool ConKVStore::insert(const std::string &subject, const std::string &predicate, const std::string &object)
 {
     size_t subID = 0, preID = 0, objID = 0;
-    id_lock.lock();
+    size_t id = 0;
+    id = lock(subject);
     if (!string2id[subject]) {
-        subID = id;
-        id++;
+        subID = ids.at(id);
+        ids.at(id)++;
         string2id.insert_or_assign(subject, subID);
         id2string.insert_or_assign(subID, subject);
-    } else
-        subID = string2id[subject];
+    } else { subID = string2id[subject]; }
+    unlock(subject);
+    id = lock(predicate);
     if (!string2id[predicate]) {
-        preID = id;
-        id++;
+        preID = ids.at(id);
+        ids.at(id)++;
         string2id.insert_or_assign(predicate, preID);
         id2string.insert_or_assign(preID, predicate);
     } else
         preID = string2id[predicate];
+    unlock(predicate);
+    id = lock(object);
     if (!string2id[object]) {
-        objID = id;
-        id++;
+        objID = ids.at(id);
+        ids.at(id)++;
         string2id.insert_or_assign(object, objID);
         id2string.insert_or_assign(objID, object);
     } else
         objID = string2id[object];
-    id_lock.unlock();
+    unlock(object);
     auto subIDList = preidobjid2subidList[std::make_pair(preID, objID)];
     auto preIDList = subidobjid2preidList[std::make_pair(subID, objID)];
     auto objIDList = subidpreid2objidList[std::make_pair(subID, preID)];
@@ -62,7 +66,7 @@ bool ConKVStore::insert(const std::string &subject, const std::string &predicate
                                               new folly::ConcurrentHashMap<size_t, char>());
     subidpreid2objidList[std::make_pair(subID, preID)]->insert_or_assign(objID, ' ');
     count++;
-    triple2id.insert_or_assign(std::make_tuple(subID, preID, objID), 0);
+    triple2id.insert_or_assign(std::make_tuple(subID, preID, objID), ' ');
     return true;
 }
 
@@ -214,6 +218,42 @@ size_t ConKVStore::getAllTriples(folly::ConcurrentHashMap<size_t, Triple> &resul
 
 ConKVStore::ConKVStore()
 {
-    this->id = 1;
     this->count = 0;
+    for (size_t i = 0; i < 128; ++i) {
+        id_locks.push_back(new std::mutex());
+        ids.push_back(i * (1 << 25));
+    }
+}
+
+void ConKVStore::insert_dict(const std::string &subject, const std::string &predicate, const std::string &object)
+{
+    size_t subID = 0, preID = 0, objID = 0;
+    size_t id;
+    id = lock(subject);
+    if (!string2id[subject]) {
+        subID = ids.at(id);
+        ids.at(id)++;
+        string2id.insert_or_assign(subject, subID);
+        id2string.insert_or_assign(subID, subject);
+    } else { subID = string2id[subject]; }
+    unlock(subject);
+    id = lock(predicate);
+    if (!string2id[predicate]) {
+        preID = ids.at(id);
+        ids.at(id)++;
+        string2id.insert_or_assign(predicate, preID);
+        id2string.insert_or_assign(preID, predicate);
+    } else
+        preID = string2id[predicate];
+    unlock(predicate);
+    id = lock(object);
+    if (!string2id[object]) {
+        objID = ids.at(id);
+        ids.at(id)++;
+        string2id.insert_or_assign(object, objID);
+        id2string.insert_or_assign(objID, object);
+    } else
+        objID = string2id[object];
+    unlock(object);
+    triple2id.insert_or_assign(std::make_tuple(subID, preID, objID), ' ');
 }

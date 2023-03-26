@@ -34,15 +34,14 @@ public:
     ConKVStore result;
     SelectQuery selectQuery;
 
-    Handle(ConKVStore &store);
+    Handle(ConKVStore &store, int thread_num, std::string database, std::string user, std::string password);
 
 
-    void replaceTemplate(std::string sub, std::string pre, std::string obj,
-                         std::vector<std::vector<mysqlx::Value>> *queryRes,
+    void replaceTemplate(std::string sub, std::string pre, std::string obj, std::vector<mysqlx::Row> *queryRes,
                          const std::unordered_map<std::string, int> &queryIndex,
                          const std::vector<std::pair<size_t, size_t>> &subPairPos,
                          const std::vector<std::pair<size_t, size_t>> &prePairPos,
-                         const std::vector<std::pair<size_t, size_t>> &objPairPos, bool join);
+                         const std::vector<std::pair<size_t, size_t>> &objPairPos, bool join, int thread_num);
 
     void findBrace(std::string src, std::vector<std::pair<size_t, size_t>> &pairPos,
                    std::vector<std::string> &columnNames);

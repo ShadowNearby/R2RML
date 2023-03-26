@@ -7,13 +7,16 @@
 #include <utility>
 #include "omp.h"
 
-const std::string schema_name = "gtfs-sql";
+//const std::string schema_name = "gtfs-sql";
 
 //namespace
-SelectQuery::SelectQuery() : session(mysqlx::Session("localhost", 33060, "yanjs", "yjs135790")),
-                             db(session.getSchema(schema_name))
+SelectQuery::SelectQuery(std::string user, std::string password, std::string schema_name) : session(
+        mysqlx::Session("localhost", 33060, user, std::move(password))),
+                                                                                            db(session.getSchema(
+                                                                                                    schema_name))
 {
     getAll();
+    this->schema_name = schema_name;
 }
 
 void SelectQuery::getAll()
@@ -22,6 +25,9 @@ void SelectQuery::getAll()
         std::string table_name = tableName;
         auto sqlResult = db.getTable(tableName).select("*").execute();
         auto &columns = sqlResult.getColumns();
+
+        auto *table = new std::vector<mysqlx::Row>(sqlResult.fetchAll());
+
         std::unordered_map<std::string, int> labels;
         int i = 0;
         for (const auto &item: columns) {
@@ -29,16 +35,17 @@ void SelectQuery::getAll()
             ++i;
         }
         tables_index[table_name] = labels;
-        size_t column_count = labels.size();
-        auto table = new std::vector<std::vector<mysqlx::Value>>;
-        for (const auto &row: sqlResult) {
-            std::vector<mysqlx::Value> vec_row(column_count);
-            for (int j = 0; j < column_count; ++j) {
-                vec_row[j] = row[j];
-            }
-            table->emplace_back(vec_row);
-        }
         tables[table_name] = table;
+//        size_t column_count = labels.size();
+//        auto table = new std::vector<std::vector<mysqlx::Value>>;
+//        for (const auto &row: rows) {
+//            std::vector<mysqlx::Value> vec_row(column_count);
+//            for (int j = 0; j < column_count; ++j) {
+//                vec_row[j] = row[j];
+//            }
+//            table->emplace_back(vec_row);
+//        }
+//        tables[table_name] = table;
     }
 }
 
@@ -49,13 +56,14 @@ void SelectQuery::getJoinRows(std::string tableName, const RefObjectMap &refObje
 {
     static double cost = 0, clear_cost = 0;
     auto start = std::chrono::steady_clock::now();
-    printf("start join clear\n");
-    join_table.clear();
+//    printf("start join clear\n");
+    delete join_table;
+    join_table = nullptr;
     join_index.clear();
-    printf("end join clear\n");
+//    printf("end join clear\n");
     auto end = std::chrono::steady_clock::now();
     clear_cost += std::chrono::duration<double>(end - start).count();
-    printf("clear cost %f\n", clear_cost);
+//    printf("clear cost %f\n", clear_cost);
     std::string child_table = std::move(tableName);
     std::string parent_table = refObjectMap.parentTableName.substr(1, refObjectMap.parentTableName.size() - 2);
     std::vector<std::string> child_columns;
@@ -85,9 +93,13 @@ void SelectQuery::getJoinRows(std::string tableName, const RefObjectMap &refObje
     }
     sql.pop_back();
     sql += ';';
+    start = std::chrono::steady_clock::now();
     auto sqlResult = session.sql(sql).execute();
-    printf("%s\n", sql.c_str());
+//    printf("%s\n", sql.c_str());
     auto &columns = sqlResult.getColumns();
+    auto *table = new std::vector<mysqlx::Row>(sqlResult.fetchAll());
+    end = std::chrono::steady_clock::now();
+//    printf("%s\n%f\n", sql.c_str(), std::chrono::duration<double>(end - start).count());
     std::unordered_map<std::string, int> labels;
     int index = 0;
     size_t child_column_size = subject_columns.size();
@@ -97,6 +109,10 @@ void SelectQuery::getJoinRows(std::string tableName, const RefObjectMap &refObje
         labels[column_name] = index;
         ++index;
     }
+    join_index = labels;
+    join_table = table;
+    end = std::chrono::steady_clock::now();
+    cost += std::chrono::duration<double>(end - start).count();
 //    printf("get child start\n");
 //    auto child_column_count = tables_index[child_table].size();
 //    printf("get child end\n");
@@ -116,25 +132,24 @@ void SelectQuery::getJoinRows(std::string tableName, const RefObjectMap &refObje
 //            labels[column_name] = pos++;
 //        }
 //    }
-    join_index = labels;
-    size_t labels_size = labels.size();
-    int row_index = 0;
-    printf("start copy\n");
-    size_t row_size = sqlResult.count();
-    printf("count end\nrow_size:%zu\n", row_size);
-    start = std::chrono::steady_clock::now();
-    join_table = std::vector<std::vector<mysqlx::Value>>(row_size);
-    for (const auto &row: sqlResult) {
-        join_table[row_index] = std::vector<mysqlx::Value>(labels_size);
-        for (int i = 0; i < labels_size; ++i) {
-            join_table[row_index][i] = row[i];
-        }
-        ++row_index;
-    }
-    end = std::chrono::steady_clock::now();
-    cost += std::chrono::duration<double>(end - start).count();
-    printf("end copy\n");
-    printf("join copy cost:%f\n", cost);
+
+//    size_t labels_size = labels.size();
+//    int row_index = 0;
+//    printf("start copy\n");
+//    size_t row_size = sqlResult.count();
+//    printf("count end\nrow_size:%zu\n", row_size);
+//    start = std::chrono::steady_clock::now();
+//    join_table = std::vector<std::vector<mysqlx::Value>>(row_size);
+//    for (const auto &row: sqlResult) {
+//        join_table[row_index] = std::vector<mysqlx::Value>(labels_size);
+//        for (int i = 0; i < labels_size; ++i) {
+//            join_table[row_index][i] = row[i];
+//        }
+//        ++row_index;
+//    }
+
+//    printf("end copy\n");
+//    printf("join copy cost:%f\n", cost);
 }
 
 SelectQuery::~SelectQuery()

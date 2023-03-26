@@ -47,12 +47,13 @@ public:
 //    std::vector<SelectField> fields;
     mysqlx::Session session;
     mysqlx::Schema db;
-    std::vector<std::vector<mysqlx::Value>> join_table;
+    std::vector<mysqlx::Row> *join_table;
     std::unordered_map<std::string, int> join_index;
-    std::unordered_map<std::string, std::vector<std::vector<mysqlx::Value>> *> tables;
+    std::unordered_map<std::string, std::vector<mysqlx::Row> *> tables;
     std::unordered_map<std::string, std::unordered_map<std::string, int>> tables_index;
+    std::string schema_name;
 
-    SelectQuery();
+    SelectQuery(std::string user, std::string password, std::string schema_name);
 
     ~SelectQuery();
 

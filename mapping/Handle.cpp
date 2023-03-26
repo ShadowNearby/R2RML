@@ -93,14 +93,16 @@ std::string removeQuot(std::string str)
     return str;
 }
 
-Handle::Handle(ConKVStore &store)
+Handle::Handle(ConKVStore &store, int thread_num, std::string database, std::string user, std::string password)
+        : selectQuery(user, password, database)
 {
     double join_cost = 0;
     double replace_cost = 0;
     parser.parse(store);
     auto it = R2RMLParser::triplesMaps.begin();
+    int maps_size = R2RMLParser::triplesMaps.size();
 //#pragma omp parallel for
-    for (int i = 0; i < R2RMLParser::triplesMaps.size(); ++i, ++it) {
+    for (int i = 0; i < maps_size; ++i, ++it) {
         std::vector<Triple> templateTripleList;
         auto &tripleMap = it->second;
         auto key = it->first;
@@ -131,7 +133,7 @@ Handle::Handle(ConKVStore &store)
             std::vector<std::string> subject_column_names;
             findBrace(sub, subPairPos, subject_column_names);
             auto start = std::chrono::steady_clock::now();
-            replaceTemplate(sub, pre, obj, queryRes, queryIndex, subPairPos, prePairPos, objPairPos, false);
+            replaceTemplate(sub, pre, obj, queryRes, queryIndex, subPairPos, prePairPos, objPairPos, false, 1);
             auto end = std::chrono::steady_clock::now();
             replace_cost += std::chrono::duration<double>(end - start).count();
         }     /// predicateObjectMap
@@ -163,11 +165,11 @@ Handle::Handle(ConKVStore &store)
                         join_cost += std::chrono::duration<double>(end - start).count();
                         join = true;
                     }
-                    auto queryRes = join ? &(selectQuery.join_table) : selectQuery.tables[logicalTableName];
+                    auto queryRes = join ? selectQuery.join_table : selectQuery.tables[logicalTableName];
                     auto queryIndex = join ? selectQuery.join_index : selectQuery.tables_index[logicalTableName];
                     auto start = std::chrono::steady_clock::now();
                     replaceTemplate(subject, predicate, object, queryRes, queryIndex, subPairPos, prePairPos,
-                                    objPairPos, join);
+                                    objPairPos, join, 1);
                     auto end = std::chrono::steady_clock::now();
                     replace_cost += std::chrono::duration<double>(end - start).count();
                 }
@@ -177,20 +179,21 @@ Handle::Handle(ConKVStore &store)
     printf("join cost:%f replace cost:%f\n", join_cost, replace_cost);
 }
 
-void Handle::replaceTemplate(std::string sub, std::string pre, std::string obj,
-                             std::vector<std::vector<mysqlx::Value>> *queryRes,
+void Handle::replaceTemplate(std::string sub, std::string pre, std::string obj, std::vector<mysqlx::Row> *queryRes,
                              const std::unordered_map<std::string, int> &queryIndex,
                              const std::vector<std::pair<size_t, size_t>> &subPairPos,
                              const std::vector<std::pair<size_t, size_t>> &prePairPos,
-                             const std::vector<std::pair<size_t, size_t>> &objPairPos, bool join)
+                             const std::vector<std::pair<size_t, size_t>> &objPairPos, bool join, int thread_num)
 {
     size_t row_size = queryRes->size();
-    size_t column_size = (*queryRes)[0].size();
+//    size_t column_size = (*queryRes)[0].size();
 //    printf("%s %s %s\n", sub.c_str(), pre.c_str(), obj.c_str());
-    omp_set_num_threads(4);
-#pragma omp parallel for
+
+    omp_set_num_threads(thread_num);
+//#define chunk_size  (row_size / 6)
+#pragma omp parallel for schedule(dynamic)
     for (int i = 0; i < row_size; ++i) {
-        auto &row = (*queryRes)[i];
+        const auto &row = (*queryRes)[i];
         std::string subject = sub, predicate = pre, object = obj;
         int preLength = 0;
         bool flag = true;
@@ -198,7 +201,7 @@ void Handle::replaceTemplate(std::string sub, std::string pre, std::string obj,
         for (auto &pairPos: subPairPos) {
             auto key = subject.substr(pairPos.first + preLength + 1, pairPos.second - pairPos.first - 1);
             if (join) key = "$" + key;
-            auto value = row.at(queryIndex.at(key));
+            auto value = row[queryIndex.at(key)];
             if (value.isNull())
                 flag = false;
             subject = subject.replace(pairPos.first + preLength, pairPos.second - pairPos.first + 1,
@@ -212,7 +215,7 @@ void Handle::replaceTemplate(std::string sub, std::string pre, std::string obj,
         for (auto &pairPos: prePairPos) {
             auto key = predicate.substr(pairPos.first + preLength + 1, pairPos.second - pairPos.first - 1);
             if (join) key = "$" + key;
-            auto value = row.at(queryIndex.at(key));
+            auto value = row[queryIndex.at(key)];
             if (value.isNull())
                 flag = false;
             predicate = predicate.replace(pairPos.first + preLength, pairPos.second - pairPos.first + 1,
@@ -226,7 +229,7 @@ void Handle::replaceTemplate(std::string sub, std::string pre, std::string obj,
         for (auto &pairPos: objPairPos) {
             auto key = object.substr(pairPos.first + preLength + 1, pairPos.second - pairPos.first - 1);
             if (join) key = "#" + key;
-            auto value = row.at(queryIndex.at(key));
+            auto value = row[queryIndex.at(key)];
             if (value.isNull())
                 flag = false;
             object = object.replace(pairPos.first + preLength, pairPos.second - pairPos.first + 1,
@@ -238,10 +241,9 @@ void Handle::replaceTemplate(std::string sub, std::string pre, std::string obj,
         }
         if (!flag)
             continue;
-        Triple triple(subject, predicate, object);
+//        Triple triple(subject, predicate, object);
 //        printf("%s %s %s\n", triple.getSubject().c_str(), triple.getPredicate().c_str(), triple.getObject().c_str());
-        result.insert(triple);
-//        res[i] = triple;
+        result.insert_dict(subject, predicate, object);
     }
 }
 

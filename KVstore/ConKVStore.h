@@ -18,6 +18,8 @@ public:
 
     size_t insert(const std::vector<Triple> &triples);
 
+    void insert_dict(const std::string &subject, const std::string &predicate, const std::string &object);
+
     size_t getTriplesBySubPreObj(folly::ConcurrentHashMap<size_t, Triple> &result, const std::string &subject,
                                  const std::string &predicate,
                                  const std::string &object);
@@ -39,8 +41,22 @@ public:
 
     size_t getAllTriples(folly::ConcurrentHashMap<size_t, Triple> &result);
 
-    std::mutex id_lock;
-    size_t id;
+    size_t lock(const std::string &str)
+    {
+        auto hash = std::hash<std::string>{}(str) % 128;
+        id_locks[hash]->lock();
+        return hash;
+    }
+
+    void unlock(const std::string &str)
+    {
+        auto hash = std::hash<std::string>{}(str) % 128;
+        id_locks[hash]->unlock();
+    }
+
+    std::vector<std::mutex *> id_locks;
+//    size_t id;
+    std::vector<size_t> ids;
     size_t count;
     folly::ConcurrentHashMap<size_t, std::string> id2string;
     folly::ConcurrentHashMap<std::string, size_t> string2id;
@@ -50,5 +66,5 @@ public:
     folly::ConcurrentHashMap<size_t, folly::ConcurrentHashMap<std::pair<size_t, size_t>, char, pair_hash> *> subid2preidobjidList;
     folly::ConcurrentHashMap<size_t, folly::ConcurrentHashMap<std::pair<size_t, size_t>, char, pair_hash> *> preid2subidobjidList;
     folly::ConcurrentHashMap<size_t, folly::ConcurrentHashMap<std::pair<size_t, size_t>, char, pair_hash> *> objid2subidpreidList;
-    folly::ConcurrentHashMap<std::tuple<size_t, size_t, size_t>, size_t, tuple_hash> triple2id;
+    folly::ConcurrentHashMap<std::tuple<size_t, size_t, size_t>, char, tuple_hash> triple2id;
 };
