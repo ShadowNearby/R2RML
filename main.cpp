@@ -19,7 +19,11 @@ int main(int argc, char *argv[])
 //    Logger logger;
     std::fstream f;
 //    f.open("../test/testin");
-    f.open("../input");
+    std::string user(argv[2]), password(argv[3]), schema_name(argv[4]), mapping_file(argv[5]);
+    int thread_num = strtol(argv[1], nullptr, 10);
+//    std::cout << "std::cin >> thread_num >> user >> password >> schema_name >> mapping_file;" << std::endl;
+//    std::cin >> thread_num >> user >> password >> schema_name >> mapping_file;
+    f.open(mapping_file);
     RDFParser parser(f);
     std::vector<Triple> vec;
     parser.parseFile(vec);
@@ -33,13 +37,22 @@ int main(int argc, char *argv[])
 //    f.close();
     auto start = std::chrono::steady_clock::now();
 //    omp_set_num_threads(16);
-    Handle handle(kvstore);
+    Handle handle(kvstore, thread_num, schema_name, user, password);
 //    f.open("../output", std::ios::out);
 //    for (const auto &item: result)
 //        f << item.second.getSubject() << " " << item.second.getPredicate() << " "
 //          << item.second.getObject()
 //          << " ." << std::endl;
 //    f.close();
+    f.open("../result-20", std::ios::out);
+    auto &id2string = handle.result.id2string;
+    for (const auto &item: handle.result.triple2id) {
+        auto sub = id2string[std::get<0>(item.first)];
+        auto pre = id2string[std::get<1>(item.first)];
+        auto obj = id2string[std::get<2>(item.first)];
+        f << sub << pre << obj << std::endl;
+    }
+    f.close();
     auto end = std::chrono::steady_clock::now();
     auto runTime = std::chrono::duration<double>(end - start).count();
 //    handle.result.getAllTriples(result);
