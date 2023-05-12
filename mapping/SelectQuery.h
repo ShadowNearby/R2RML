@@ -65,11 +65,11 @@ public:
 
 //    void getRows(std::string tableName);
 
-    void getJoinRows(std::string tableName, const RefObjectMap &refObjectMap,
+    double getJoinRows(std::string tableName, const RefObjectMap &refObjectMap,
                      const std::vector<std::string> &subject_columns,
                      const std::vector<std::string> &object_columns);
 
-    void getAll();
+    double getAll();
 
     void clearResult();
 };

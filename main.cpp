@@ -7,11 +7,36 @@
 #include "mapping/SelectQuery.h"
 #include "KVstore/ConKVStore.h"
 #include "omp.h"
-
+#include <sstream>
+using namespace std;
 auto _100 = R"(..\tiny_example)";
 auto _100k = R"(..\example)";
 auto _10m = R"(D:\Download\Claros)";
 
+void outputTriples(string path, Handle &handle, int thread_num) {
+    auto& id2string = handle.result.id2string;
+    int notriples = handle.result.triple2id.size();
+    vector<vector<size_t>> tripleids(notriples, vector<size_t>(3));
+    int index = 0;
+    for (const auto& item : handle.result.triple2id) {
+        tripleids[index][0] = std::get<0>(item.first);
+        tripleids[index][1] = std::get<1>(item.first);
+        tripleids[index][2] = std::get<2>(item.first);
+        index++;
+    }
+    int numberpersection = (notriples / thread_num) + 1;
+#pragma omp parallel for schedule(static)
+    for (int i = 0; i < thread_num; i++) {
+        fstream local;
+        local.open(path + "result-" + to_string(i), std::ios::out);
+        stringstream s;
+        for (int j = numberpersection * i; j < numberpersection * (i + 1) && j < notriples; j++) {
+            s << id2string[tripleids[j][0]] << " " << id2string[tripleids[j][0]] << " " << id2string[tripleids[j][0]] << " ." << endl;
+        }
+        local << s.str();
+        local.close();
+    }
+}
 
 int main(int argc, char *argv[])
 {
@@ -38,14 +63,9 @@ int main(int argc, char *argv[])
     auto start = std::chrono::steady_clock::now();
 //    omp_set_num_threads(16);
     Handle handle(kvstore, thread_num, schema_name, user, password);
-    //f.open("../result-20", std::ios::out);
-    //auto &id2string = handle.result.id2string;
-    //for (const auto &item: handle.result.triple2id) {
-    //    auto sub = id2string[std::get<0>(item.first)];
-    //    auto pre = id2string[std::get<1>(item.first)];
-    //    auto obj = id2string[std::get<2>(item.first)];
-    //    f << sub << pre << obj << std::endl;
-    //}
+    //;
+    outputTriples("C:/Users/21578/source/repos/result/", handle, thread_num);
+ 
     //f.close();
     auto end = std::chrono::steady_clock::now();
     auto runTime = std::chrono::duration<double>(end - start).count();

@@ -10,7 +10,6 @@
 
 //namespace
 inline std::string castQuery(mysqlx::Session& ses, std::string table, std::string db) {
-	std::cout << table << "," << db << std::endl;
 	mysqlx::SqlResult result = ses.sql("select column_name from information_schema.`COLUMNS` where table_name='" + table + "' and table_schema='" + db + "'").execute();
 	std::vector<mysqlx::Row>v = result.fetchAll();
 	std::string sqlquery = "SELECT ";
@@ -25,18 +24,27 @@ SelectQuery::SelectQuery(std::string user, std::string password, std::string sch
 	mysqlx::Session("localhost", 33060, user, std::move(password))), threadnum(thread_num), db(session.getSchema(schema_name)), result(store)
 {
 	this->schema_name = schema_name;
-	getAll();
+	auto start = std::chrono::steady_clock::now();
+	double query_time = getAll();
+	std::cout<<"Query time in all "<<query_time<<std::endl;
+	auto end = std::chrono::steady_clock::now();
+	std::cout<<"All tables read and processed in " << std::chrono::duration < double >(end - start).count()<<" seconds" << std::endl;
 }
 
-void SelectQuery::getAll()
+double SelectQuery::getAll()
 {
+	double querytime = 0;
 	for (const auto& tableName : db.getTableNames()) {
 		std::string table_name = tableName;
+		auto start = std::chrono::steady_clock::now();
 		//auto sqlResult = db.getTable(tableName).select("*").execute();
 		auto sqlResult = session.sql(castQuery(session, tableName, this->schema_name)).execute();
 		auto& columns = sqlResult.getColumns();
 
+		
 		std::vector<mysqlx::Row> temp = sqlResult.fetchAll();
+		auto end = std::chrono::steady_clock::now();
+		querytime += std::chrono::duration < double >(end - start).count();
 		int len = temp.size(), rowlen = temp[0].colCount();
 		auto a = std::chrono::high_resolution_clock::now();
 		//if (tableName == "shapes")threadnum = 1;
@@ -87,7 +95,7 @@ void SelectQuery::getAll()
 }
 
 
-void SelectQuery::getJoinRows(std::string tableName, const RefObjectMap& refObjectMap,
+double SelectQuery::getJoinRows(std::string tableName, const RefObjectMap& refObjectMap,
 	const std::vector<std::string>& subject_columns,
 	const std::vector<std::string>& object_columns)
 {
@@ -100,7 +108,7 @@ void SelectQuery::getJoinRows(std::string tableName, const RefObjectMap& refObje
 	//    printf("end join clear\n");
 	auto end = std::chrono::steady_clock::now();
 	clear_cost += std::chrono::duration<double>(end - start).count();
-	//    printf("clear cost %f\n", clear_cost);
+	printf("clear cost %f\n", clear_cost);
 	std::string child_table = std::move(tableName);
 	std::string parent_table = refObjectMap.parentTableName.substr(1, refObjectMap.parentTableName.size() - 2);
 	std::vector<std::string> child_columns;
@@ -137,7 +145,6 @@ void SelectQuery::getJoinRows(std::string tableName, const RefObjectMap& refObje
 	auto sqlResult = session.sql(sql).execute();
 	//    printf("%s\n", sql.c_str());
 	auto& columns = sqlResult.getColumns();
-	auto mid1 = std::chrono::steady_clock::now();
 	std::vector<mysqlx::Row> temp = sqlResult.fetchAll();
 	auto mid2 = std::chrono::steady_clock::now();
 	int len = temp.size(), rowlen = temp[0].colCount();
@@ -159,15 +166,15 @@ void SelectQuery::getJoinRows(std::string tableName, const RefObjectMap& refObje
 	}
 	end = std::chrono::steady_clock::now();
     printf("%s\n%f\n", sql.c_str(), std::chrono::duration<double>(end - start).count());
-	std::cout << "time spent on query execution:" << std::chrono::duration<double>(mid1 - start).count()<<std::endl;
-	std::cout << "time spent on query as a whole:" << std::chrono::duration<double>(mid2 - start).count() << std::endl;
+	//std::cout << "time spent on query execution:" << std::chrono::duration<double>(mid1 - start).count()<<std::endl;
+	//std::cout << "time spent on query as a whole:" << std::chrono::duration<double>(mid2 - start).count() << std::endl;
 	std::unordered_map<std::string, int> labels;
 	int index = 0;
 	size_t child_column_size = subject_columns.size();
 	for (const auto& item : columns) {
 		std::string column_name = index < child_column_size ? "$" : "#";
 		column_name += item.getColumnLabel();
-		std::cout << column_name << std::endl;
+		//std::cout << column_name << std::endl;
 		labels[column_name] = index;
 		++index;
 	}
@@ -175,6 +182,7 @@ void SelectQuery::getJoinRows(std::string tableName, const RefObjectMap& refObje
 	join_table = v1;
 	end = std::chrono::steady_clock::now();
 	cost += std::chrono::duration<double>(end - start).count();
+	return (double)std::chrono::duration<double>(mid2 - start).count();
 	//    printf("get child start\n");
 	//    auto child_column_count = tables_index[child_table].size();
 	//    printf("get child end\n");

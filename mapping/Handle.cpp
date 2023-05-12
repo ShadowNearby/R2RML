@@ -97,7 +97,7 @@ Handle::Handle(ConKVStore &store, int thread_num, std::string database, std::str
         : result(ConKVStore()),  selectQuery(user, password, database, thread_num, &result)
 {
     result.id2string.insert_or_assign(0, "");
-    double join_cost = 0;
+    double join_cost = 0,join_query_cost=0;
     double replace_cost = 0;
     parser.parse(store);
     auto it = R2RMLParser::triplesMaps.begin();
@@ -160,7 +160,7 @@ Handle::Handle(ConKVStore &store, int thread_num, std::string database, std::str
                         findBrace(object, objPairPos, object_column_names);
 //                        printf("%s %s %s\n", subject.c_str(), predicate.c_str(), object.c_str());
                         auto start = std::chrono::steady_clock::now();
-                        selectQuery.getJoinRows(logicalTableName, objectMap.refObjectMap, subject_column_names,
+                        join_query_cost+=selectQuery.getJoinRows(logicalTableName, objectMap.refObjectMap, subject_column_names,
                                                 object_column_names);
                         auto end = std::chrono::steady_clock::now();
                         join_cost += std::chrono::duration<double>(end - start).count();
@@ -177,7 +177,7 @@ Handle::Handle(ConKVStore &store, int thread_num, std::string database, std::str
             }
         }
     }
-    printf("join cost:%f replace cost:%f\n", join_cost, replace_cost);
+    printf("join cost:%f replace cost:%f, join query cost:%f\n", join_cost, replace_cost,join_query_cost);
 }
 
 void Handle::replaceTemplate(std::string sub, std::string pre, std::string obj, std::vector<std::vector<size_t>> *queryRes,
