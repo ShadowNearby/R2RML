@@ -38,3 +38,4 @@
 #include "PairHash.h"
 #include <mysqlx/xdevapi.h>
 
+std::string toStdString(mysqlx::Value& value);

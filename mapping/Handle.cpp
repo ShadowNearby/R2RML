@@ -94,8 +94,9 @@ std::string removeQuot(std::string str)
 }
 
 Handle::Handle(ConKVStore &store, int thread_num, std::string database, std::string user, std::string password)
-        : selectQuery(user, password, database)
+        : result(ConKVStore()),  selectQuery(user, password, database, thread_num, &result)
 {
+    result.id2string.insert_or_assign(0, "");
     double join_cost = 0;
     double replace_cost = 0;
     parser.parse(store);
@@ -133,7 +134,7 @@ Handle::Handle(ConKVStore &store, int thread_num, std::string database, std::str
             std::vector<std::string> subject_column_names;
             findBrace(sub, subPairPos, subject_column_names);
             auto start = std::chrono::steady_clock::now();
-            replaceTemplate(sub, pre, obj, queryRes, queryIndex, subPairPos, prePairPos, objPairPos, false, 1);
+            replaceTemplate(sub, pre, obj, queryRes, queryIndex, subPairPos, prePairPos, objPairPos, false, thread_num);
             auto end = std::chrono::steady_clock::now();
             replace_cost += std::chrono::duration<double>(end - start).count();
         }     /// predicateObjectMap
@@ -169,7 +170,7 @@ Handle::Handle(ConKVStore &store, int thread_num, std::string database, std::str
                     auto queryIndex = join ? selectQuery.join_index : selectQuery.tables_index[logicalTableName];
                     auto start = std::chrono::steady_clock::now();
                     replaceTemplate(subject, predicate, object, queryRes, queryIndex, subPairPos, prePairPos,
-                                    objPairPos, join, 1);
+                                    objPairPos, join, thread_num);
                     auto end = std::chrono::steady_clock::now();
                     replace_cost += std::chrono::duration<double>(end - start).count();
                 }
@@ -179,7 +180,7 @@ Handle::Handle(ConKVStore &store, int thread_num, std::string database, std::str
     printf("join cost:%f replace cost:%f\n", join_cost, replace_cost);
 }
 
-void Handle::replaceTemplate(std::string sub, std::string pre, std::string obj, std::vector<mysqlx::Row> *queryRes,
+void Handle::replaceTemplate(std::string sub, std::string pre, std::string obj, std::vector<std::vector<size_t>> *queryRes,
                              const std::unordered_map<std::string, int> &queryIndex,
                              const std::vector<std::pair<size_t, size_t>> &subPairPos,
                              const std::vector<std::pair<size_t, size_t>> &prePairPos,
@@ -191,7 +192,7 @@ void Handle::replaceTemplate(std::string sub, std::string pre, std::string obj, 
 
     omp_set_num_threads(thread_num);
 //#define chunk_size  (row_size / 6)
-#pragma omp parallel for schedule(dynamic)
+#pragma omp parallel for schedule(static)
     for (int i = 0; i < row_size; ++i) {
         const auto &row = (*queryRes)[i];
         std::string subject = sub, predicate = pre, object = obj;
@@ -201,43 +202,43 @@ void Handle::replaceTemplate(std::string sub, std::string pre, std::string obj, 
         for (auto &pairPos: subPairPos) {
             auto key = subject.substr(pairPos.first + preLength + 1, pairPos.second - pairPos.first - 1);
             if (join) key = "$" + key;
-            auto value = row[queryIndex.at(key)];
-            if (value.isNull())
+            auto value = result.get(row[queryIndex.at(key)]);
+            if (value=="")
                 flag = false;
             subject = subject.replace(pairPos.first + preLength, pairPos.second - pairPos.first + 1,
-                                      toStdString(value));
+                                      value);
             if (!join)
-                preLength += (int) toStdString(value).size() - (int) key.length() - 2;
+                preLength += (int) value.size() - (int) key.length() - 2;
             else
-                preLength += (int) toStdString(value).size() - (int) key.length() - 1;
+                preLength += (int) value.size() - (int) key.length() - 1;
         }
         preLength = 0;
         for (auto &pairPos: prePairPos) {
             auto key = predicate.substr(pairPos.first + preLength + 1, pairPos.second - pairPos.first - 1);
             if (join) key = "$" + key;
-            auto value = row[queryIndex.at(key)];
-            if (value.isNull())
+            auto value = result.get(row[queryIndex.at(key)]);
+            if (value=="")
                 flag = false;
             predicate = predicate.replace(pairPos.first + preLength, pairPos.second - pairPos.first + 1,
-                                          toStdString(value));
+                                          value);
             if (!join)
-                preLength += (int) toStdString(value).size() - (int) key.length() - 2;
+                preLength += (int) value.size() - (int) key.length() - 2;
             else
-                preLength += (int) toStdString(value).size() - (int) key.length() - 1;
+                preLength += (int) value.size() - (int) key.length() - 1;
         }
         preLength = 0;
         for (auto &pairPos: objPairPos) {
             auto key = object.substr(pairPos.first + preLength + 1, pairPos.second - pairPos.first - 1);
             if (join) key = "#" + key;
-            auto value = row[queryIndex.at(key)];
-            if (value.isNull())
+            auto value = result.get(row[queryIndex.at(key)]);
+            if (value=="")
                 flag = false;
             object = object.replace(pairPos.first + preLength, pairPos.second - pairPos.first + 1,
-                                    toStdString(value));
+                                    value);
             if (!join)
-                preLength += (int) toStdString(value).size() - (int) key.length() - 2;
+                preLength += (int) value.size() - (int) key.length() - 2;
             else
-                preLength += (int) toStdString(value).size() - (int) key.length() - 1;
+                preLength += (int) value.size() - (int) key.length() - 1;
         }
         if (!flag)
             continue;
@@ -264,7 +265,7 @@ void Handle::findBrace(std::string src, std::vector<std::pair<size_t, size_t>> &
     }
 }
 
-std::string Handle::toStdString(mysqlx::Value &value)
+std::string toStdString(mysqlx::Value &value)
 {
     switch (value.getType()) {
         case mysqlx::Value::INT64:

@@ -38,21 +38,15 @@ int main(int argc, char *argv[])
     auto start = std::chrono::steady_clock::now();
 //    omp_set_num_threads(16);
     Handle handle(kvstore, thread_num, schema_name, user, password);
-//    f.open("../output", std::ios::out);
-//    for (const auto &item: result)
-//        f << item.second.getSubject() << " " << item.second.getPredicate() << " "
-//          << item.second.getObject()
-//          << " ." << std::endl;
-//    f.close();
-    f.open("../result-20", std::ios::out);
-    auto &id2string = handle.result.id2string;
-    for (const auto &item: handle.result.triple2id) {
-        auto sub = id2string[std::get<0>(item.first)];
-        auto pre = id2string[std::get<1>(item.first)];
-        auto obj = id2string[std::get<2>(item.first)];
-        f << sub << pre << obj << std::endl;
-    }
-    f.close();
+    //f.open("../result-20", std::ios::out);
+    //auto &id2string = handle.result.id2string;
+    //for (const auto &item: handle.result.triple2id) {
+    //    auto sub = id2string[std::get<0>(item.first)];
+    //    auto pre = id2string[std::get<1>(item.first)];
+    //    auto obj = id2string[std::get<2>(item.first)];
+    //    f << sub << pre << obj << std::endl;
+    //}
+    //f.close();
     auto end = std::chrono::steady_clock::now();
     auto runTime = std::chrono::duration<double>(end - start).count();
 //    handle.result.getAllTriples(result);
@@ -65,5 +59,7 @@ int main(int argc, char *argv[])
 //        auto t = it->second;
 //        printf("%s %s %s\n", t.getSubject().c_str(), t.getPredicate().c_str(), t.getObject().c_str());
 //    }
+    int out;
+    std::cin >> out;
     return 0;
 }
