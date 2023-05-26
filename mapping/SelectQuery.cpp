@@ -63,6 +63,7 @@ double SelectQuery::getAll()
 				for (int j = 0; j < rowlen; j++)
 				{
 					if (!temp[l][j].isNull()) {
+						
 						size_t id = result->get(std::string(temp[l][j]));
 						(*v1)[l][j] = id;
 					}
@@ -165,7 +166,7 @@ double SelectQuery::getJoinRows(std::string tableName, const RefObjectMap& refOb
 		}
 	}
 	end = std::chrono::steady_clock::now();
-    printf("%s\n%f\n", sql.c_str(), std::chrono::duration<double>(end - start).count());
+    //printf("%s\n%f\n", sql.c_str(), std::chrono::duration<double>(end - start).count());
 	//std::cout << "time spent on query execution:" << std::chrono::duration<double>(mid1 - start).count()<<std::endl;
 	//std::cout << "time spent on query as a whole:" << std::chrono::duration<double>(mid2 - start).count() << std::endl;
 	std::unordered_map<std::string, int> labels;

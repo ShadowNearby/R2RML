@@ -221,7 +221,7 @@ ConKVStore::ConKVStore()
     this->count = 0;
     for (size_t i = 0; i < 128; ++i) {
         id_locks.push_back(new std::mutex());
-        ids.push_back(i * (1 << 25));
+        ids.push_back(i * (1 << 25) + 1);
     }
 }
 

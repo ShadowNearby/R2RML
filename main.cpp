@@ -31,7 +31,7 @@ void outputTriples(string path, Handle &handle, int thread_num) {
         local.open(path + "result-" + to_string(i), std::ios::out);
         stringstream s;
         for (int j = numberpersection * i; j < numberpersection * (i + 1) && j < notriples; j++) {
-            s << id2string[tripleids[j][0]] << " " << id2string[tripleids[j][0]] << " " << id2string[tripleids[j][0]] << " ." << endl;
+            s << id2string[tripleids[j][0]] << " " << id2string[tripleids[j][1]] << " " << id2string[tripleids[j][2]] << " ." << endl;
         }
         local << s.str();
         local.close();
@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
 //    omp_set_num_threads(16);
     Handle handle(kvstore, thread_num, schema_name, user, password);
     //;
-    outputTriples("C:/Users/21578/source/repos/result/", handle, thread_num);
+    outputTriples("C:/IST/R2RML/Materilzation/Fingr/", handle, thread_num);
  
     //f.close();
     auto end = std::chrono::steady_clock::now();

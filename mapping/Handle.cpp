@@ -121,6 +121,7 @@ Handle::Handle(ConKVStore &store, int thread_num, std::string database, std::str
         }
         /// subjectMap
         subject = tripleMap.subjectMap.getSubject();
+        //std::cout << "subject: " << subject << std::endl;
         if (!tripleMap.subjectMap.subjectClass.empty()) {
             folly::ConcurrentHashMap<std::string, std::vector<mysqlx::Value>> storedTemplate;
             std::string sub = subject;
@@ -152,11 +153,18 @@ Handle::Handle(ConKVStore &store, int thread_num, std::string database, std::str
                     // non-parentTriplesMap
                     if (objectMap.constant.empty()) {
                         object = objectMap.termMap.getValue();
+                        if (objectMap.termType == rrPrefix::IRI_) {
+                            quote2Bracket(object);
+                        }
+                        else if (objectMap.xsd_type != "") {
+                            object += "^^"+ objectMap.xsd_type;
+                        }
                         findBrace(object, objPairPos, object_column_names);
                     }
                         // parentTriplesMap
                     else {
                         object = R2RMLParser::triplesMaps[objectMap.refObjectMap.parentNode].subjectMap.getSubject();
+                        if (predicate == "<http://vocab.gtfs.org/terms#shapePoint>")std::cout << object << std::endl;
                         findBrace(object, objPairPos, object_column_names);
 //                        printf("%s %s %s\n", subject.c_str(), predicate.c_str(), object.c_str());
                         auto start = std::chrono::steady_clock::now();

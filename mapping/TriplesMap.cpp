@@ -6,7 +6,7 @@
 
 std::string &SubjectMap::getSubject()
 {
-    return termMap.getValue();
+    return termMap.getValue(MapType::subject_);
 }
 
 std::string &SubjectMap::getGraph()
@@ -22,6 +22,9 @@ std::string &columnToTemplate(std::string &src)
     return src;
 }
 
+inline void quote2Bracket(std::string& str) {
+    str = "<" + str.substr(1, str.size() - 2) + ">";
+}
 std::string &TermMap::getValue()
 {
     if (!constant_.empty())
@@ -32,3 +35,20 @@ std::string &TermMap::getValue()
     column_.clear();
     return template_;
 }
+
+std::string&TermMap::getValue(MapType type) {
+    switch (type) {
+    case MapType::subject_ :
+        if (!template_.empty()) {
+            quote2Bracket(template_);
+            return template_;
+        }
+        template_ = columnToTemplate(column_);
+        column_.clear();
+        quote2Bracket(template_);
+        return  template_;
+    default: 
+        return getValue();
+    }
+}
+

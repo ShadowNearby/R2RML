@@ -7,7 +7,7 @@
 #include "../util/Utility.h"
 
 //const std::string
-
+inline void quote2Bracket(std::string& str);
 namespace rrPrefix
 {
 //  static const std::string  = "<http://www.w3.org/ns/r2rml#>";
@@ -37,6 +37,9 @@ namespace rrPrefix
     static const std::string class_ = "<http://www.w3.org/ns/r2rml#class>";
     static const std::string ObjectMap_ = "<http://www.w3.org/ns/r2rml#ObjectMap>";
     static const std::string objectMap_ = "<http://www.w3.org/ns/r2rml#objectMap>";
+    static const std::string termType_ = "<http://www.w3.org/ns/r2rml#termType>";
+    static const std::string Literal_ = "<http://www.w3.org/ns/r2rml#Literal>";
+    static const std::string IRI_ = "<http://www.w3.org/ns/r2rml#IRI>";
 //    static const std::string parentTriplesMap_ = "<http://www.w3.org/ns/r2rml#parentTriplesMap>";
 //    const std::string refObjectMap_ = "<http://www.w3.org/ns/r2rml#refObjectMap>";
 }
@@ -58,7 +61,11 @@ enum TermMapType
     Column_,
     Template_
 };
-
+enum MapType {
+    subject_,
+    predicate_,
+    object_
+};
 class TermMap
 {
 public:
@@ -76,6 +83,7 @@ public:
     }
 
     std::string &getValue();
+    std::string& getValue(MapType type);
 };
 
 
@@ -110,7 +118,7 @@ public:
     TermMap termMap;
     std::string graph;
     GraphMap graphMap;
-
+    std::string xsd_type="";
     [[nodiscard]] bool empty() const
     {
         return subjectClass.empty() && termMap.empty() && graph.empty() && graphMap.empty();
@@ -125,7 +133,7 @@ class PredicateMap
 {
 public:
     TermMap termMap;
-
+    std::string xsd_type="";
     [[nodiscard]] bool empty() const
     {
         return termMap.empty();
@@ -166,7 +174,8 @@ public:
     RefObjectMap refObjectMap;
     TermMap termMap;
     std::string constant;
-
+    std::string termType="";
+    std::string xsd_type="";
     [[nodiscard]] bool empty() const
     {
         return termMap.empty() && refObjectMap.empty() && constant.empty();
