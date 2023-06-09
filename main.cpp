@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
 //    Logger logger;
     std::fstream f;
 //    f.open("../test/testin");
-    std::string user(argv[2]), password(argv[3]), schema_name(argv[4]), mapping_file(argv[5]);
+    std::string user(argv[2]), password(argv[3]), schema_name(argv[4]), mapping_file(argv[5]),outDir(argv[6]);
     int thread_num = strtol(argv[1], nullptr, 10);
 //    std::cout << "std::cin >> thread_num >> user >> password >> schema_name >> mapping_file;" << std::endl;
 //    std::cin >> thread_num >> user >> password >> schema_name >> mapping_file;
@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
     Handle handle(kvstore, thread_num, schema_name, user, password,start);
     //;
     printf("begin output\n");
-    outputTriples("D:/IST/R2RML/Output/bsbm/fingr/", handle, thread_num);
+    outputTriples(outDir, handle, thread_num);
  
     //f.close();
     auto end = std::chrono::steady_clock::now();

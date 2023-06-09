@@ -26,6 +26,12 @@ inline std::string R2RMLParser::getTermType(std::string node, ConKVStore& store)
     return "";
 }
 
+inline std::string R2RMLParser::getLanguage(std::string node, ConKVStore& store) {
+    folly::ConcurrentHashMap<size_t, Triple> triples;
+    store.getTriplesBySubPre(triples, node, rrPrefix::language);
+    if (!triples.empty())return triples.begin()->second.getObject();
+    return "";
+}
 std::unordered_map<std::string, TriplesMap> R2RMLParser::triplesMaps = std::unordered_map<std::string, TriplesMap>();
 std::unordered_map<std::string, RefObjectMap> R2RMLParser::refObjectMaps = std::unordered_map<std::string, RefObjectMap>();
 std::unordered_map<std::string, ObjectMap> R2RMLParser::objectMaps = std::unordered_map<std::string, ObjectMap>();
@@ -190,8 +196,10 @@ void R2RMLParser::parse(ConKVStore &store)
                     /// predicateObjectMap objectMap Column_
                    // if (!blankNode(objMapNode)) {
                         //datatypeddd
+                        objMap.termType.clear();
                         objMap.xsd_type = getDataType(objMapNode, store);
                         objMap.termType = getTermType(objMapNode, store);
+                        objMap.termMap.language = getLanguage(objMapNode, store);
                         size_t a, b, c;
                         store.getTriplesBySubPre(triplesFromStore, objMapNode, rrPrefix::column_);
                         a = triplesFromStore.size();
@@ -207,6 +215,10 @@ void R2RMLParser::parse(ConKVStore &store)
                             auto objMapTemplate = triplesFromStore.begin()->second.getObject();
                             objMap.termMap.type_ = Template_;
                             objMap.termMap.template_ = objMapTemplate;
+                            if (objMap.termType == "") {
+                                objMap.termType = rrPrefix::IRI_;
+                                //std::cout << "IRI!\n"
+                            }
                         }
                         /// predicateObjectMap objectMap Constant_
                         store.getTriplesBySubPre(triplesFromStore, objMapNode, rrPrefix::constant_);

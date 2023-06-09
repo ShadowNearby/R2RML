@@ -4,12 +4,12 @@
 #include "TriplesMap.h"
 #include "R2RMLParser.h"
 
-std::string &SubjectMap::getSubject()
+std::string SubjectMap::getSubject()
 {
     return termMap.getValue(MapType::subject_);
 }
 
-std::string &SubjectMap::getGraph()
+std::string SubjectMap::getGraph()
 {
     if (!graph.empty())
         return graph;
@@ -25,7 +25,7 @@ std::string &columnToTemplate(std::string &src)
 inline void quote2Bracket(std::string& str) {
     str = "<" + str.substr(1, str.size() - 2) + ">";
 }
-std::string &TermMap::getValue()
+std::string TermMap::getValue()
 {
     if (!constant_.empty())
         return constant_;
@@ -36,7 +36,7 @@ std::string &TermMap::getValue()
     return template_;
 }
 
-std::string&TermMap::getValue(MapType type) {
+std::string TermMap::getValue(MapType type) {
     switch (type) {
     case MapType::subject_ :
         if (!template_.empty()) {
