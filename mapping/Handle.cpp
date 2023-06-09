@@ -93,8 +93,8 @@ std::string removeQuot(std::string str)
     return str;
 }
 
-Handle::Handle(ConKVStore &store, int thread_num, std::string database, std::string user, std::string password)
-        : result(ConKVStore()),  selectQuery(user, password, database, thread_num, &result)
+Handle::Handle(ConKVStore &store, int thread_num, std::string database, std::string user, std::string password, std::chrono::steady_clock::time_point start)
+        : result(ConKVStore()),  selectQuery(user, password, database, thread_num, &result, start), start(start)
 {
     result.id2string.insert_or_assign(0, "");
     double join_cost = 0,join_query_cost=0;
@@ -134,10 +134,10 @@ Handle::Handle(ConKVStore &store, int thread_num, std::string database, std::str
             auto queryIndex = selectQuery.tables_index[logicalTableName];
             std::vector<std::string> subject_column_names;
             findBrace(sub, subPairPos, subject_column_names);
-            auto start = std::chrono::steady_clock::now();
+            //auto start = std::chrono::steady_clock::now();
             replaceTemplate(sub, pre, obj, queryRes, queryIndex, subPairPos, prePairPos, objPairPos, false, thread_num);
-            auto end = std::chrono::steady_clock::now();
-            replace_cost += std::chrono::duration<double>(end - start).count();
+            //auto end = std::chrono::steady_clock::now();
+            //replace_cost += std::chrono::duration<double>(end - start).count();
         }     /// predicateObjectMap
         for (auto &predicateObjectMap: tripleMap.predicateObjectMaps) {
             for (auto &objectMap: predicateObjectMap.objectMap) {
@@ -170,17 +170,18 @@ Handle::Handle(ConKVStore &store, int thread_num, std::string database, std::str
                         auto start = std::chrono::steady_clock::now();
                         join_query_cost+=selectQuery.getJoinRows(logicalTableName, objectMap.refObjectMap, subject_column_names,
                                                 object_column_names);
+                        std::cout << "JoinRow returns " << std::chrono::duration<double>(std::chrono::steady_clock::now() - this->start) << std::endl;
                         auto end = std::chrono::steady_clock::now();
                         join_cost += std::chrono::duration<double>(end - start).count();
                         join = true;
                     }
                     auto queryRes = join ? selectQuery.join_table : selectQuery.tables[logicalTableName];
                     auto queryIndex = join ? selectQuery.join_index : selectQuery.tables_index[logicalTableName];
-                    auto start = std::chrono::steady_clock::now();
+                    //auto start = std::chrono::steady_clock::now();
                     replaceTemplate(subject, predicate, object, queryRes, queryIndex, subPairPos, prePairPos,
                                     objPairPos, join, thread_num);
-                    auto end = std::chrono::steady_clock::now();
-                    replace_cost += std::chrono::duration<double>(end - start).count();
+                    //auto end = std::chrono::steady_clock::now();
+                    //replace_cost += std::chrono::duration<double>(end - start).count();
                 }
             }
         }

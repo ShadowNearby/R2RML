@@ -33,8 +33,8 @@ public:
     R2RMLParser parser;
     ConKVStore result;
     SelectQuery selectQuery;
-
-    Handle(ConKVStore &store, int thread_num, std::string database, std::string user, std::string password);
+    std::chrono::steady_clock::time_point start;
+    Handle(ConKVStore &store, int thread_num, std::string database, std::string user, std::string password, std::chrono::steady_clock::time_point start);
 
 
     void replaceTemplate(std::string sub, std::string pre, std::string obj, std::vector<std::vector<size_t>> *queryRes,

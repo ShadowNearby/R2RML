@@ -54,8 +54,8 @@ public:
     std::unordered_map<std::string, std::vector<std::vector<size_t>>*> tables;
     std::unordered_map<std::string, std::unordered_map<std::string, int>> tables_index;
     std::string schema_name;
-
-    SelectQuery(std::string user, std::string password, std::string schema_name,int thread_num, ConKVStore* store);
+    std::chrono::steady_clock::time_point start;
+    SelectQuery(std::string user, std::string password, std::string schema_name,int thread_num, ConKVStore* store, std::chrono::steady_clock::time_point start);
 
     ~SelectQuery();
 

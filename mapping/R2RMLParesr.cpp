@@ -188,7 +188,7 @@ void R2RMLParser::parse(ConKVStore &store)
                 for (const auto &objMapNode: objMapIndexs) {
                     ObjectMap objMap;
                     /// predicateObjectMap objectMap Column_
-                    if (!blankNode(objMapNode)) {
+                   // if (!blankNode(objMapNode)) {
                         //datatypeddd
                         objMap.xsd_type = getDataType(objMapNode, store);
                         objMap.termType = getTermType(objMapNode, store);
@@ -243,7 +243,7 @@ void R2RMLParser::parse(ConKVStore &store)
                                 objMap.refObjectMap.join.emplace_back(j);
                             }
                         }
-                    } else { objMap.constant = objMapNode; }
+                    //} else { objMap.constant = objMapNode; }
                     preobjMap.objectMap.emplace_back(objMap);
                 }
             }

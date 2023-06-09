@@ -20,38 +20,38 @@ inline std::string castQuery(mysqlx::Session& ses, std::string table, std::strin
 	return sqlquery;
 }
 
-SelectQuery::SelectQuery(std::string user, std::string password, std::string schema_name, int thread_num, ConKVStore* store) : session(
-	mysqlx::Session("localhost", 33060, user, std::move(password))), threadnum(thread_num), db(session.getSchema(schema_name)), result(store)
+SelectQuery::SelectQuery(std::string user, std::string password, std::string schema_name, int thread_num, ConKVStore* store, std::chrono::steady_clock::time_point start) : session(
+	mysqlx::Session("localhost", 33060, user, std::move(password))), threadnum(thread_num), db(session.getSchema(schema_name)), result(store),start(start)
 {
 	this->schema_name = schema_name;
-	auto start = std::chrono::steady_clock::now();
+	//auto start = std::chrono::steady_clock::now();
 	double query_time = getAll();
-	std::cout<<"Query time in all "<<query_time<<std::endl;
-	auto end = std::chrono::steady_clock::now();
-	std::cout<<"All tables read and processed in " << std::chrono::duration < double >(end - start).count()<<" seconds" << std::endl;
+	//std::cout<<"Query time in all "<<query_time<<std::endl;
+//	auto end = std::chrono::steady_clock::now();
+	//std::cout<<"All tables read and processed in " << std::chrono::duration < double >(end - start).count()<<" seconds" << std::endl;
 }
 
 double SelectQuery::getAll()
 {
-	double querytime = 0;
+	//double querytime = 0;
 	for (const auto& tableName : db.getTableNames()) {
 		std::string table_name = tableName;
-		auto start = std::chrono::steady_clock::now();
+		//auto start = std::chrono::steady_clock::now();
 		//auto sqlResult = db.getTable(tableName).select("*").execute();
 		auto sqlResult = session.sql(castQuery(session, tableName, this->schema_name)).execute();
 		auto& columns = sqlResult.getColumns();
 
 		
 		std::vector<mysqlx::Row> temp = sqlResult.fetchAll();
-		auto end = std::chrono::steady_clock::now();
-		querytime += std::chrono::duration < double >(end - start).count();
+		//auto end = std::chrono::steady_clock::now();
+		//querytime += std::chrono::duration < double >(end - start).count();
 		int len = temp.size(), rowlen = temp[0].colCount();
 		auto a = std::chrono::high_resolution_clock::now();
 		//if (tableName == "shapes")threadnum = 1;
 		int fragmentsize = (len + threadnum - 1) / threadnum;
 		auto v1 = new std::vector<std::vector<size_t>>(len, std::vector<size_t>(rowlen));
 
-
+		//std::cout << "conversion started\n";
 		/*if (temp[0][j].getType() == mysqlx::Value::DOUBLE)omp_set_num_threads(1);
 		else omp_set_num_threads(threadnum);*/
 		omp_set_num_threads(threadnum);
@@ -68,12 +68,16 @@ double SelectQuery::getAll()
 						(*v1)[l][j] = id;
 					}
 					else (*v1)[l][j] = 0;
+					//temp[l][j] = "";
 					//std::cout << "here\n";
 				}
+				temp[l].clear();
 			}
 		}
-		auto b = std::chrono::high_resolution_clock::now();
-		std::cout << "conversion time: " << std::chrono::duration_cast<std::chrono::microseconds>(b - a).count() / 1000000.0 << ", size : " << len << std::endl;
+		std::vector<mysqlx::Row> tempEmpty;
+		temp.swap(tempEmpty);
+		//auto b = std::chrono::high_resolution_clock::now();
+		//std::cout << "conversion time: " << std::chrono::duration_cast<std::chrono::microseconds>(b - a).count() / 1000000.0 << ", size : " << len << std::endl;
 		std::unordered_map<std::string, int> labels;
 		int i = 0;
 		for (const auto& item : columns) {
@@ -100,16 +104,17 @@ double SelectQuery::getJoinRows(std::string tableName, const RefObjectMap& refOb
 	const std::vector<std::string>& subject_columns,
 	const std::vector<std::string>& object_columns)
 {
-	static double cost = 0, clear_cost = 0;
-	auto start = std::chrono::steady_clock::now();
+	std::cout << "JoinRows Begin: " << std::chrono::duration<double>(std::chrono::steady_clock::now() - start)<<std::endl;
+	static double cost = 0;//, clear_cost = 0;
+	//auto start = std::chrono::steady_clock::now();
 	//    printf("start join clear\n");
 	delete join_table;
 	join_table = nullptr;
 	join_index.clear();
 	//    printf("end join clear\n");
 	auto end = std::chrono::steady_clock::now();
-	clear_cost += std::chrono::duration<double>(end - start).count();
-	printf("clear cost %f\n", clear_cost);
+	//clear_cost += std::chrono::duration<double>(end - start).count();
+	//printf("clear cost %f\n", clear_cost);
 	std::string child_table = std::move(tableName);
 	std::string parent_table = refObjectMap.parentTableName.substr(1, refObjectMap.parentTableName.size() - 2);
 	std::vector<std::string> child_columns;
@@ -142,33 +147,58 @@ double SelectQuery::getJoinRows(std::string tableName, const RefObjectMap& refOb
 	sql.pop_back();
 	sql += ';';
 	//std::cout << sql << std::endl;
-	start = std::chrono::steady_clock::now();
+	//start = std::chrono::steady_clock::now();
 	auto sqlResult = session.sql(sql).execute();
 	//    printf("%s\n", sql.c_str());
 	auto& columns = sqlResult.getColumns();
-	std::vector<mysqlx::Row> temp = sqlResult.fetchAll();
-	auto mid2 = std::chrono::steady_clock::now();
-	int len = temp.size(), rowlen = temp[0].colCount();
+	auto temp = std::make_shared<std::vector<mysqlx::Row>>();
+	*temp = sqlResult.fetchAll();
+	//auto mid2 = std::chrono::steady_clock::now();
+	int len = temp->size(), rowlen = (*temp)[0].colCount();
 	int fragmentsize = (len + threadnum - 1) / threadnum;
 	auto v1 = new std::vector<std::vector<size_t>>(len, std::vector<size_t>(rowlen));
-
+	std::cout << "Join conversion begins "<<" at " << std::chrono::duration<double>(std::chrono::steady_clock::now() - start) << std::endl;
 	omp_set_num_threads(threadnum);
+	//auto mid1 = std::chrono::steady_clock::now();
+//#pragma omp parallel for schedule(static)
+//	for (int k = 0; k < threadnum; k++) {
+//		for (int l = fragmentsize * k; l < fragmentsize * (k + 1) && l < len; l++)
+//		{
+//			for (int j = 0; j < rowlen; j++)
+//			{
+//				if (!temp[l][j].isNull())(*v1)[l][j] = result->get(std::string(temp[l][j]));
+//				else (*v1)[l][j] = 0;
+//				//temp[l][j] = "";
+//			}
+//			temp[l].clear();
+//			//temp[l] = mysqlx::Row();
+//			//std::memset(&temp[l], sizeof(mysqlx::Row), 0);
+//		}
+//	}
 #pragma omp parallel for schedule(static)
-	for (int k = 0; k < threadnum; k++) {
-
-		for (int l = fragmentsize * k; l < fragmentsize * (k + 1) && l < len; l++)
-		{
+	for (int l = 0; l < len; l++) {
+		
 			for (int j = 0; j < rowlen; j++)
 			{
-				if (!temp[l][j].isNull())(*v1)[l][j] = result->get(std::string(temp[l][j]));
+				if (!(*temp)[l][j].isNull())(*v1)[l][j] = result->get(std::string((*temp)[l][j]));
 				else (*v1)[l][j] = 0;
+				//temp[l][j] = "";
 			}
-		}
+			(*temp)[l].clear();
+			//temp[l] = mysqlx::Row();
+			//std::memset(&temp[l], sizeof(mysqlx::Row), 0);
+		
 	}
-	end = std::chrono::steady_clock::now();
+	std::cout << "Join conversion ends " << " at " << std::chrono::duration<double>(std::chrono::steady_clock::now() - start) << std::endl;
+	//auto mid3 = std::chrono::steady_clock::now();
+	//std::memset(&temp[0], sizeof(mysqlx::Row) * len, 0);
+	
+	//end = std::chrono::steady_clock::now();
     //printf("%s\n%f\n", sql.c_str(), std::chrono::duration<double>(end - start).count());
 	//std::cout << "time spent on query execution:" << std::chrono::duration<double>(mid1 - start).count()<<std::endl;
-	//std::cout << "time spent on query as a whole:" << std::chrono::duration<double>(mid2 - start).count() << std::endl;
+	//std::cout << "time spent on clear:" << std::chrono::duration<double>(end - mid3).count() << std::endl;
+	//std::cout << "time spent on conversion and clear:" << std::chrono::duration<double>(end - mid1).count() << std::endl;
+	//std::cout << "time spent on query as a whole:" << std::chrono::duration<double>(end - start).count() << std::endl;
 	std::unordered_map<std::string, int> labels;
 	int index = 0;
 	size_t child_column_size = subject_columns.size();
@@ -181,46 +211,10 @@ double SelectQuery::getJoinRows(std::string tableName, const RefObjectMap& refOb
 	}
 	join_index = labels;
 	join_table = v1;
-	end = std::chrono::steady_clock::now();
-	cost += std::chrono::duration<double>(end - start).count();
-	return (double)std::chrono::duration<double>(mid2 - start).count();
-	//    printf("get child start\n");
-	//    auto child_column_count = tables_index[child_table].size();
-	//    printf("get child end\n");
-	//    for (int i = 0; i < child_column_count; ++i) {
-	//        std::string column_name = columns[i].getColumnName();
-	//        if (std::find(subject_columns.begin(), subject_columns.end(), column_name) != subject_columns.end()) {
-	//            column_name = "$" + column_name;
-	//            column_pos.emplace_back(i);
-	//            labels[column_name] = pos++;
-	//        }
-	//    }
-	//    for (size_t i = child_column_count; i < column_count; ++i) {
-	//        std::string column_name = columns[i].getColumnName();
-	//        if (std::find(object_columns.begin(), object_columns.end(), column_name) != object_columns.end()) {
-	//            column_name = "#" + column_name;
-	//            column_pos.emplace_back(i);
-	//            labels[column_name] = pos++;
-	//        }
-	//    }
-
-	//    size_t labels_size = labels.size();
-	//    int row_index = 0;
-	//    printf("start copy\n");
-	//    size_t row_size = sqlResult.count();
-	//    printf("count end\nrow_size:%zu\n", row_size);
-	//    start = std::chrono::steady_clock::now();
-	//    join_table = std::vector<std::vector<mysqlx::Value>>(row_size);
-	//    for (const auto &row: sqlResult) {
-	//        join_table[row_index] = std::vector<mysqlx::Value>(labels_size);
-	//        for (int i = 0; i < labels_size; ++i) {
-	//            join_table[row_index][i] = row[i];
-	//        }
-	//        ++row_index;
-	//    }
-
-	//    printf("end copy\n");
-	//    printf("join copy cost:%f\n", cost);
+	std::cout << "hereJoinRow "<< std::chrono::duration<double>(std::chrono::steady_clock::now() - start)<<std::endl;
+	//end = std::chrono::steady_clock::now();
+	//cost += std::chrono::duration<double>(end - start).count();
+	return 0;//(double)std::chrono::duration<double>(mid2 - start).count();
 }
 
 SelectQuery::~SelectQuery()
