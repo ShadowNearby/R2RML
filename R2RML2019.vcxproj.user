@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LocalDebuggerCommandArguments>32 root 19980612wsy benchmark C:/IST/R2RML/bsbmtools-v0.2/bsbmtools-0.2/bsbm.ttl C:\IST\R2RML\Materilzation\bsbm\fingr\</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>32 root 19980612wsy gtfs20 C:/IST/R2RML/input.ttl C:\IST\R2RML\Materilzation\Fingr\</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>

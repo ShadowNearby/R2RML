@@ -135,7 +135,7 @@ double SelectQuery::getJoinRows(std::string tableName, const RefObjectMap& refOb
 	parent_get_columns.pop_back();
 	parent_get_columns.push_back(' ');
 	std::string sql =
-		"select " + child_get_columns + parent_get_columns + "from (select * from `" + schema_name + "`." +
+		"select distinct " + child_get_columns + parent_get_columns + "from (select * from `" + schema_name + "`." +
 		child_table + ") as child,\n" +
 		"  (select * from `" + schema_name + "`." + parent_table +
 		") as parent\n" +
@@ -146,7 +146,7 @@ double SelectQuery::getJoinRows(std::string tableName, const RefObjectMap& refOb
 	}
 	sql.pop_back();
 	sql += ';';
-	//std::cout << sql << std::endl;
+	std::cout << sql << std::endl;
 	//start = std::chrono::steady_clock::now();
 	auto sqlResult = session.sql(sql).execute();
 	//    printf("%s\n", sql.c_str());
