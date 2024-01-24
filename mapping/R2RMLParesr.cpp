@@ -8,7 +8,30 @@ bool blankNode(const std::string &node)
     return node.substr(0, 4) == "<_:_";
 }
 
+inline std::string R2RMLParser::getDataType(std::string node, ConKVStore &store) {
+    folly::ConcurrentHashMap<size_t, Triple> triples;
+    store.getTriplesBySubPre(triples, node, rrPrefix::termType_);
+    if (!triples.empty()&&triples.begin()->second.getObject()==rrPrefix::Literal_) {
+        store.getTriplesBySubPre(triples, node, rrPrefix::datatype_);
+        if (!triples.empty())return triples.begin()->second.getObject();
+    }
+    return "";
+}
 
+inline std::string R2RMLParser::getTermType(std::string node, ConKVStore& store)
+{
+    folly::ConcurrentHashMap<size_t, Triple> triples;
+    store.getTriplesBySubPre(triples, node, rrPrefix::termType_);
+    if (!triples.empty())return triples.begin()->second.getObject();
+    return "";
+}
+
+inline std::string R2RMLParser::getLanguage(std::string node, ConKVStore& store) {
+    folly::ConcurrentHashMap<size_t, Triple> triples;
+    store.getTriplesBySubPre(triples, node, rrPrefix::language);
+    if (!triples.empty())return triples.begin()->second.getObject();
+    return "";
+}
 std::unordered_map<std::string, TriplesMap> R2RMLParser::triplesMaps = std::unordered_map<std::string, TriplesMap>();
 std::unordered_map<std::string, RefObjectMap> R2RMLParser::refObjectMaps = std::unordered_map<std::string, RefObjectMap>();
 std::unordered_map<std::string, ObjectMap> R2RMLParser::objectMaps = std::unordered_map<std::string, ObjectMap>();
@@ -128,6 +151,7 @@ void R2RMLParser::parse(ConKVStore &store)
                 }
                 for (const auto &preMapNode: preMapIndexs) {
                     PredicateMap preMap;
+                    preMap.xsd_type = getDataType(preMapNode, store);
                     /// predicateObjectMap predicateMap Column_
                     store.getTriplesBySubPre(triplesFromStore, preMapNode, rrPrefix::column_);
                     if (!triplesFromStore.empty()) {
@@ -170,7 +194,12 @@ void R2RMLParser::parse(ConKVStore &store)
                 for (const auto &objMapNode: objMapIndexs) {
                     ObjectMap objMap;
                     /// predicateObjectMap objectMap Column_
-                    if (!blankNode(objMapNode)) {
+                   // if (!blankNode(objMapNode)) {
+                        //datatypeddd
+                        objMap.termType.clear();
+                        objMap.xsd_type = getDataType(objMapNode, store);
+                        objMap.termType = getTermType(objMapNode, store);
+                        objMap.termMap.language = getLanguage(objMapNode, store);
                         size_t a, b, c;
                         store.getTriplesBySubPre(triplesFromStore, objMapNode, rrPrefix::column_);
                         a = triplesFromStore.size();
@@ -186,6 +215,10 @@ void R2RMLParser::parse(ConKVStore &store)
                             auto objMapTemplate = triplesFromStore.begin()->second.getObject();
                             objMap.termMap.type_ = Template_;
                             objMap.termMap.template_ = objMapTemplate;
+                            if (objMap.termType == "") {
+                                objMap.termType = rrPrefix::IRI_;
+                                //std::cout << "IRI!\n"
+                            }
                         }
                         /// predicateObjectMap objectMap Constant_
                         store.getTriplesBySubPre(triplesFromStore, objMapNode, rrPrefix::constant_);
@@ -222,7 +255,7 @@ void R2RMLParser::parse(ConKVStore &store)
                                 objMap.refObjectMap.join.emplace_back(j);
                             }
                         }
-                    } else { objMap.constant = objMapNode; }
+                    //} else { objMap.constant = objMapNode; }
                     preobjMap.objectMap.emplace_back(objMap);
                 }
             }
@@ -241,6 +274,7 @@ void R2RMLParser::parse(ConKVStore &store)
 //                               objMap.refObjectMap.parentTableName.c_str());
                         objMap.constant.clear();
                         objMap.termMap = parentMap.subjectMap.termMap;
+                        objMap.termType = rrPrefix::IRI_;
                     }
                 }
             }

@@ -33,11 +33,11 @@ public:
     R2RMLParser parser;
     ConKVStore result;
     SelectQuery selectQuery;
+    std::chrono::steady_clock::time_point start;
+    Handle(ConKVStore &store, int thread_num, std::string database, std::string user, std::string password, std::chrono::steady_clock::time_point start);
 
-    Handle(ConKVStore &store, int thread_num, std::string database, std::string user, std::string password);
 
-
-    void replaceTemplate(std::string sub, std::string pre, std::string obj, std::vector<mysqlx::Row> *queryRes,
+    void replaceTemplate(std::string sub, std::string pre, std::string obj, std::vector<std::vector<size_t>> *queryRes,
                          const std::unordered_map<std::string, int> &queryIndex,
                          const std::vector<std::pair<size_t, size_t>> &subPairPos,
                          const std::vector<std::pair<size_t, size_t>> &prePairPos,
@@ -46,5 +46,4 @@ public:
     void findBrace(std::string src, std::vector<std::pair<size_t, size_t>> &pairPos,
                    std::vector<std::string> &columnNames);
 
-    std::string toStdString(mysqlx::Value &value);
 };

@@ -93,10 +93,11 @@ std::string removeQuot(std::string str)
     return str;
 }
 
-Handle::Handle(ConKVStore &store, int thread_num, std::string database, std::string user, std::string password)
-        : selectQuery(user, password, database)
+Handle::Handle(ConKVStore &store, int thread_num, std::string database, std::string user, std::string password, std::chrono::steady_clock::time_point start)
+        : result(ConKVStore()),  selectQuery(user, password, database, thread_num, &result, start), start(start)
 {
-    double join_cost = 0;
+    result.id2string.insert_or_assign(0, "");
+    double join_cost = 0,join_query_cost=0;
     double replace_cost = 0;
     parser.parse(store);
     auto it = R2RMLParser::triplesMaps.begin();
@@ -120,6 +121,7 @@ Handle::Handle(ConKVStore &store, int thread_num, std::string database, std::str
         }
         /// subjectMap
         subject = tripleMap.subjectMap.getSubject();
+        //std::cout << "subject: " << subject << std::endl;
         if (!tripleMap.subjectMap.subjectClass.empty()) {
             folly::ConcurrentHashMap<std::string, std::vector<mysqlx::Value>> storedTemplate;
             std::string sub = subject;
@@ -132,10 +134,10 @@ Handle::Handle(ConKVStore &store, int thread_num, std::string database, std::str
             auto queryIndex = selectQuery.tables_index[logicalTableName];
             std::vector<std::string> subject_column_names;
             findBrace(sub, subPairPos, subject_column_names);
-            auto start = std::chrono::steady_clock::now();
-            replaceTemplate(sub, pre, obj, queryRes, queryIndex, subPairPos, prePairPos, objPairPos, false, 1);
-            auto end = std::chrono::steady_clock::now();
-            replace_cost += std::chrono::duration<double>(end - start).count();
+            //auto start = std::chrono::steady_clock::now();
+            replaceTemplate(sub, pre, obj, queryRes, queryIndex, subPairPos, prePairPos, objPairPos, false, thread_num);
+            //auto end = std::chrono::steady_clock::now();
+            //replace_cost += std::chrono::duration<double>(end - start).count();
         }     /// predicateObjectMap
         for (auto &predicateObjectMap: tripleMap.predicateObjectMaps) {
             for (auto &objectMap: predicateObjectMap.objectMap) {
@@ -151,35 +153,50 @@ Handle::Handle(ConKVStore &store, int thread_num, std::string database, std::str
                     // non-parentTriplesMap
                     if (objectMap.constant.empty()) {
                         object = objectMap.termMap.getValue();
+                        std::cout << objectMap.termType << std::endl;
+                        if (object.find("http://downlode.org/rdf/iso-3166/countries#{country}")!=-1) {
+                            std::cout << "hee\n";
+                        }
+                        if (objectMap.termType == rrPrefix::IRI_) {
+                            quote2Bracket(object);
+                        }
+                        else if (objectMap.xsd_type != "") {
+                            object += "^^"+ objectMap.xsd_type;
+                        }
+                        if (objectMap.termMap.language != "") {
+                            object += "@" +  removeQuot(objectMap.termMap.language);
+                        }
                         findBrace(object, objPairPos, object_column_names);
                     }
                         // parentTriplesMap
                     else {
                         object = R2RMLParser::triplesMaps[objectMap.refObjectMap.parentNode].subjectMap.getSubject();
+                        std::cout << object << std::endl;
                         findBrace(object, objPairPos, object_column_names);
 //                        printf("%s %s %s\n", subject.c_str(), predicate.c_str(), object.c_str());
                         auto start = std::chrono::steady_clock::now();
-                        selectQuery.getJoinRows(logicalTableName, objectMap.refObjectMap, subject_column_names,
+                        join_query_cost+=selectQuery.getJoinRows(logicalTableName, objectMap.refObjectMap, subject_column_names,
                                                 object_column_names);
+                        std::cout << "JoinRow returns " << std::chrono::duration<double>(std::chrono::steady_clock::now() - this->start) << std::endl;
                         auto end = std::chrono::steady_clock::now();
                         join_cost += std::chrono::duration<double>(end - start).count();
                         join = true;
                     }
                     auto queryRes = join ? selectQuery.join_table : selectQuery.tables[logicalTableName];
                     auto queryIndex = join ? selectQuery.join_index : selectQuery.tables_index[logicalTableName];
-                    auto start = std::chrono::steady_clock::now();
+                    //auto start = std::chrono::steady_clock::now();
                     replaceTemplate(subject, predicate, object, queryRes, queryIndex, subPairPos, prePairPos,
-                                    objPairPos, join, 1);
-                    auto end = std::chrono::steady_clock::now();
-                    replace_cost += std::chrono::duration<double>(end - start).count();
+                                    objPairPos, join, thread_num);
+                    //auto end = std::chrono::steady_clock::now();
+                    //replace_cost += std::chrono::duration<double>(end - start).count();
                 }
             }
         }
     }
-    printf("join cost:%f replace cost:%f\n", join_cost, replace_cost);
+    printf("join cost:%f replace cost:%f, join query cost:%f\n", join_cost, replace_cost,join_query_cost);
 }
 
-void Handle::replaceTemplate(std::string sub, std::string pre, std::string obj, std::vector<mysqlx::Row> *queryRes,
+void Handle::replaceTemplate(std::string sub, std::string pre, std::string obj, std::vector<std::vector<size_t>> *queryRes,
                              const std::unordered_map<std::string, int> &queryIndex,
                              const std::vector<std::pair<size_t, size_t>> &subPairPos,
                              const std::vector<std::pair<size_t, size_t>> &prePairPos,
@@ -191,7 +208,7 @@ void Handle::replaceTemplate(std::string sub, std::string pre, std::string obj, 
 
     omp_set_num_threads(thread_num);
 //#define chunk_size  (row_size / 6)
-#pragma omp parallel for schedule(dynamic)
+#pragma omp parallel for schedule(static)
     for (int i = 0; i < row_size; ++i) {
         const auto &row = (*queryRes)[i];
         std::string subject = sub, predicate = pre, object = obj;
@@ -201,43 +218,43 @@ void Handle::replaceTemplate(std::string sub, std::string pre, std::string obj, 
         for (auto &pairPos: subPairPos) {
             auto key = subject.substr(pairPos.first + preLength + 1, pairPos.second - pairPos.first - 1);
             if (join) key = "$" + key;
-            auto value = row[queryIndex.at(key)];
-            if (value.isNull())
+            auto value = result.get(row[queryIndex.at(key)]);
+            if (value=="")
                 flag = false;
             subject = subject.replace(pairPos.first + preLength, pairPos.second - pairPos.first + 1,
-                                      toStdString(value));
+                                      value);
             if (!join)
-                preLength += (int) toStdString(value).size() - (int) key.length() - 2;
+                preLength += (int) value.size() - (int) key.length() - 2;
             else
-                preLength += (int) toStdString(value).size() - (int) key.length() - 1;
+                preLength += (int) value.size() - (int) key.length() - 1;
         }
         preLength = 0;
         for (auto &pairPos: prePairPos) {
             auto key = predicate.substr(pairPos.first + preLength + 1, pairPos.second - pairPos.first - 1);
             if (join) key = "$" + key;
-            auto value = row[queryIndex.at(key)];
-            if (value.isNull())
+            auto value = result.get(row[queryIndex.at(key)]);
+            if (value=="")
                 flag = false;
             predicate = predicate.replace(pairPos.first + preLength, pairPos.second - pairPos.first + 1,
-                                          toStdString(value));
+                                          value);
             if (!join)
-                preLength += (int) toStdString(value).size() - (int) key.length() - 2;
+                preLength += (int) value.size() - (int) key.length() - 2;
             else
-                preLength += (int) toStdString(value).size() - (int) key.length() - 1;
+                preLength += (int) value.size() - (int) key.length() - 1;
         }
         preLength = 0;
         for (auto &pairPos: objPairPos) {
             auto key = object.substr(pairPos.first + preLength + 1, pairPos.second - pairPos.first - 1);
             if (join) key = "#" + key;
-            auto value = row[queryIndex.at(key)];
-            if (value.isNull())
+            auto value = result.get(row[queryIndex.at(key)]);
+            if (value=="")
                 flag = false;
             object = object.replace(pairPos.first + preLength, pairPos.second - pairPos.first + 1,
-                                    toStdString(value));
+                                    value);
             if (!join)
-                preLength += (int) toStdString(value).size() - (int) key.length() - 2;
+                preLength += (int) value.size() - (int) key.length() - 2;
             else
-                preLength += (int) toStdString(value).size() - (int) key.length() - 1;
+                preLength += (int) value.size() - (int) key.length() - 1;
         }
         if (!flag)
             continue;
@@ -264,7 +281,7 @@ void Handle::findBrace(std::string src, std::vector<std::pair<size_t, size_t>> &
     }
 }
 
-std::string Handle::toStdString(mysqlx::Value &value)
+std::string toStdString(mysqlx::Value &value)
 {
     switch (value.getType()) {
         case mysqlx::Value::INT64:

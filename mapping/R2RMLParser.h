@@ -15,7 +15,9 @@ public:
     static std::unordered_map<std::string, TriplesMap> triplesMaps;
     static std::unordered_map<std::string, RefObjectMap> refObjectMaps;
     static std::unordered_map<std::string, ObjectMap> objectMaps;
-
+    inline std::string getDataType(std::string node, ConKVStore& store);
+    inline std::string getTermType(std::string node, ConKVStore& store);
+    inline std::string getLanguage(std::string node, ConKVStore& store);
     R2RMLParser()
     = default;
 
